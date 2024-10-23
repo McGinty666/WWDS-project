@@ -1,0 +1,22 @@
+SELECT TOP (100) [Hour]
+      ,[DbAddr]
+      ,[count]
+      ,[mean_EValue]
+      ,[stddev_EValue]
+      ,[min_EValue]
+      ,[max_EValue]
+      ,[5percentile]
+      ,[50percentile]
+      ,[95percentile]
+      ,[CountofOutOfDate]
+      ,[CountofOutOfRange]
+      ,[CountofSuspect]
+      ,[SourceSystem]
+      ,[Year]
+      ,[Month]
+      ,[Day]
+	  ,CONCAT([Year], '-', [Month], '-', [Day]) AS [spill_hours]
+  FROM [dbo].[AnaloguesAggregatedHourlyView]
+  WHERE [DBAddr] = '11943'
+  AND [Year] = '2024'
+  AND [98percentile] > 95
