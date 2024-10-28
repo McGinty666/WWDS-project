@@ -138,15 +138,14 @@ ORDER BY
     CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE);
 
 
-
 -- query7
 WITH SpillDays AS (
     SELECT DISTINCT 
         CONCAT([Year], '-', [Month], '-', [Day]) AS [spill_days]
     FROM [dbo].[AnaloguesAggregatedDailyView]
-    WHERE [DBAddr] = '{DB_Addr_sump}'
+    WHERE [DBAddr] = '{DBAddr_sump}'
       AND [98percentile] > '{spill_level}'
-	  AND CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE) BETWEEN '{start_date}' AND '{end_date}'
+	  AND CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE) BETWEEN '{start_date_spill_query}' AND '{end_date_spill_query}'
 )
 SELECT 
       [Hour],
@@ -168,7 +167,7 @@ SELECT
       [Day],
       CONCAT([Year], '-', [Month], '-', [Day], '-', [Hour]) AS [spill_hours] 
   FROM [dbo].[AnaloguesAggregatedHourlyView]
-  WHERE [DBAddr] = '{DB_Addr_sump}'
+  WHERE [DBAddr] = '{DBAddr_sump}'
     AND [50percentile] > {spill_level}
     AND CONCAT([Year], '-', [Month], '-', [Day]) IN (SELECT [spill_days] FROM SpillDays)	
 ORDER BY CONCAT([Year], '-', [Month], '-', [Day], '-', [Hour])
