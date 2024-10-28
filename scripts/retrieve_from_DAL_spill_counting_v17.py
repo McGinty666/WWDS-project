@@ -65,6 +65,7 @@ print(df_get_signals)
 
 #%%
 
+import tkinter as tk
 from tkinter import simpledialog, ttk
 
 # Filter the dataframe to get rows where 'DB Name' contains the string 'sump level'
@@ -76,10 +77,8 @@ def get_value():
         custom_signal = simpledialog.askstring("Input", "Please enter your custom signal:")
         custom_source = simpledialog.askstring("Input", "Please enter your custom source:")
         if custom_signal and custom_source:
-            print(f"Custom signal entered: {custom_signal}")
-            print(f"Custom source entered: {custom_source}")
-            DB_Addr_sump.set(custom_signal)
-            Source_sump.set(custom_source)
+            DB_Addr_sump_var.set(custom_signal)
+            Source_sump_var.set(custom_source)
         else:
             print("No custom value entered.")
     else:
@@ -87,16 +86,14 @@ def get_value():
         matching_rows = filtered_df_sump[(filtered_df_sump['DB Name'] == db_name) & (filtered_df_sump['DB Addr'] == db_addr)]
         if not matching_rows.empty:
             selected_row = matching_rows.iloc[0]
-            DB_Addr_sump.set(selected_row['DB Addr'])
-            Source_sump.set(selected_row['Source'])
-            print(f"Selected DB Addr: {selected_row['DB Addr']}")
-            print(f"Selected Source: {selected_row['Source']}")
+            DB_Addr_sump_var.set(selected_row['DB Addr'])
+            Source_sump_var.set(selected_row['Source'])
         else:
             print("No matching rows found in the DataFrame.")
 
     # Create new variables
-    DB_Addr_sump_str.set(DB_Addr_sump.get()[1:])  # Convert to string and remove the first character
-    Source_sump_str.set(str(Source_sump.get()))  # Convert to string
+    DB_Addr_sump_str.set(str(DB_Addr_sump_var.get())[1:])  # Convert to string and remove the first character
+    Source_sump_str.set(str(Source_sump_var.get()))  # Convert to string
 
 # Create the main window
 root = tk.Tk()
@@ -129,7 +126,6 @@ tree.pack(pady=10)
 DB_Addr_sump_var = tk.StringVar()
 Source_sump_var = tk.StringVar()
 
-
 # New variables to store the string conversions
 DB_Addr_sump_str = tk.StringVar()
 Source_sump_str = tk.StringVar()
@@ -137,16 +133,17 @@ Source_sump_str = tk.StringVar()
 # Run the application
 root.mainloop()
 
-
-
+# Get the final values
 db_addr_sump_value = DB_Addr_sump_var.get()
-DB_Addr_sump_str = db_addr_sump_value[1:]
+DB_Addr_sump_str.set(str(db_addr_sump_value)[1:])
 
-Source_sump_str = Source_sump.get()
+Source_sump_str.set(str(Source_sump_var.get()))
 
+print('DB_Addr_sump_str:', DB_Addr_sump_str.get())
+print('Source_sump_str:', Source_sump_str.get())
+print('Type of DB_Addr_sump_str:', type(DB_Addr_sump_str.get()))
+print('Type of Source_sump_str:', type(Source_sump_str.get()))
 
-print('DB_Addr_sump_str:', DB_Addr_sump_str)
-print('Source_sump_str:', Source_sump_str)
 
 
 #%%
@@ -244,9 +241,9 @@ easting_value = rounded_x
 northing_value = rounded_y
 
 
-DB_Addr_sump = DB_Addr_sump_str
+DB_Addr_sump = DB_Addr_sump_str.get()
 DBAddr_flow_meter = DB_Addr_rising_main_flow_str
-SourceSystem_sump = Source_sump_str  
+SourceSystem_sump = Source_sump_var.get()
 sourcesystem_flow_meter = Source_rising_main_flow_str
 
 
@@ -270,7 +267,7 @@ end_date_spill_query = '2024-10-27'
 
 #%%
 
-query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DB_Addr_sump=DB_Addr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
+query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DB_Addr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
 
 df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
 
