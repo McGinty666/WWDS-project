@@ -100,7 +100,6 @@ def get_value():
             Source_sump_var.set(selected_row['Source'])
         else:
             print("No matching rows found in the DataFrame.")
-
     # Create new variables
     DB_Addr_sump_str.set(str(DB_Addr_sump_var.get())[1:])  # Convert to string and remove the first character
     Source_sump_str.set(str(Source_sump_var.get()))  # Convert to string

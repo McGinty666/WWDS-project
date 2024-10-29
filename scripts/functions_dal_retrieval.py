@@ -5,7 +5,25 @@ Created on Tue Oct 29 11:46:54 2024
 @author: RMCGINT
 """
 
-def get_signals():
+
+import sqlalchemy
+import pyodbc
+import pandas as pd
+import re
+from DAL_Class_1 import DAL
+import processing_functions
+from datetime import datetime
+from site_information_class import SiteDataProcessor
+import tkinter as tk
+from tkinter import simpledialog, scrolledtext
+from tkinter import ttk
+from PIL import Image, ImageTk
+from tkinter import messagebox
+import math
+
+
+def get_signals(entry_site_id, output_text_1, tree, dropdown_var, dropdown_menu, dropdown_var_sump, dropdown_menu_sump):
+    global filtered_df_rising_main_flow, filtered_df_sump
     site_id = int(entry_site_id.get())
     processor = SiteDataProcessor(
         '../ww_site_info/ww_sites_list.xlsx',
@@ -49,7 +67,6 @@ def get_signals():
         tree.insert("", "end", values=row)
 
     # Filter the dataframe for 'rising main flow'
-    global filtered_df_rising_main_flow
     filtered_df_rising_main_flow = df_get_signals[df_get_signals['DB Name'].str.contains('rising main flow', case=False, na=False)]
     options = [f"{row['DB Name']} - {row['DB Addr']}" for index, row in filtered_df_rising_main_flow.iterrows()] + ["Custom"]
     dropdown_var.set("Select flow meter signal")
@@ -58,7 +75,6 @@ def get_signals():
         dropdown_menu['menu'].add_command(label=option, command=tk._setit(dropdown_var, option))
 
     # Filter the dataframe for 'sump level'
-    global filtered_df_sump
     filtered_df_sump = df_get_signals[df_get_signals['DB Name'].str.contains('sump level', case=False, na=False)]
     options_sump = [f"{row['DB Name']} - {row['DB Addr']}" for index, row in filtered_df_sump.iterrows()] + ["Custom"]
     dropdown_var_sump.set("Select level analog signal")
@@ -66,7 +82,9 @@ def get_signals():
     for option in options_sump:
         dropdown_menu_sump['menu'].add_command(label=option, command=tk._setit(dropdown_var_sump, option))
 
-def get_value():
+
+def get_value(dropdown_var, filtered_df_rising_main_flow):
+    global DB_Addr_rising_main_flow, Source_rising_main_flow
     selected_value = dropdown_var.get()
     if selected_value == "Custom":
         custom_signal = simpledialog.askstring("Input", "Please enter your custom signal (include the E):")
@@ -92,7 +110,7 @@ def get_value():
     DB_Addr_rising_main_flow_str.set(DB_Addr_rising_main_flow.get()[1:])  # Convert to string and remove the first character
     Source_rising_main_flow_str.set(str(Source_rising_main_flow.get()))  # Convert to string
 
-def get_value_sump():
+def get_value_sump(dropdown_var_sump, filtered_df_sump):
     selected_value = dropdown_var_sump.get()
     if selected_value == "Custom":
         custom_signal = simpledialog.askstring("Input", "Please enter your custom signal:")
@@ -113,7 +131,43 @@ def get_value_sump():
             print(f"Selected Source: {selected_row['Source']}")
         else:
             print("No matching rows found in the DataFrame.")
+    
+def open_spill_query_page():
+    spill_query_window = tk.Toplevel(root)
+    spill_query_window.title("Run Spill Query")
+    spill_query_window.configure(bg='light blue')
 
-    # Create new variables
-    DB_Addr_sump_str.set(str(DB_Addr_sump_var.get())[1:])  # Convert to string and remove the first character
-    Source_sump_str.set(str(Source_sump_var.get()))  # Convert to string
+    tk.Label(spill_query_window, text="Enter Spill Level:", bg='light blue').pack(pady=5)
+    entry_spill_level = tk.Entry(spill_query_window)
+    entry_spill_level.pack(pady=5)
+
+    tk.Label(spill_query_window, text="Select Start Date:", bg='light blue').pack(pady=5)
+    start_date_frame = tk.Frame(spill_query_window, bg='light blue')
+    start_date_frame.pack(pady=5)
+    start_year = ttk.Combobox(start_date_frame, values=[str(year) for year in range(2000, 2030)])
+    start_year.pack(side="left")
+    start_month = ttk.Combobox(start_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
+    start_month.pack(side="left")
+    start_day = ttk.Combobox(start_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
+    start_day.pack(side="left")
+
+    tk.Label(spill_query_window, text="Select End Date:", bg='light blue').pack(pady=5)
+    end_date_frame = tk.Frame(spill_query_window, bg='light blue')
+    end_date_frame.pack(pady=5)
+    end_year = ttk.Combobox(end_date_frame, values=[str(year) for year in range(2000, 2030)])
+    end_year.pack(side="left")
+    end_month = ttk.Combobox(end_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
+    end_month.pack(side="left")
+    end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
+    end_day.pack(side="left")
+
+    output_text_2 = scrolledtext.ScrolledText(spill_query_window, width=80, height=10)
+    output_text_2.pack(pady=5)
+    
+    def run_query():
+        spill_level = int(entry_spill_level.get())
+        start_date = f"{start_year.get()}-{start_month.get()}-{start_day.get()}"
+        end_date = f"{end_year.get()}-{end_month.get()}-{end_day.get()}"
+        run_spill_query(entry_site_id.get(), spill_level, start_date, end_date, output_text_2)
+
+    tk.Button(spill_query_window, text="Run Spill Query", command=run_query).pack(pady=5)

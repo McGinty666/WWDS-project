@@ -137,7 +137,6 @@ WHERE
 ORDER BY 
     CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE);
 
-
 -- query7
 WITH SpillDays AS (
     SELECT DISTINCT 
