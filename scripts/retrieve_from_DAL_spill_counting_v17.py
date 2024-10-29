@@ -51,7 +51,7 @@ else:
 
 queries = processing_functions.read_queries('queries_v3.sql')
 query0 = queries['query0']
-query7 = queries['query7']
+#query7 = queries['query7']
 
 #%%
 
@@ -60,6 +60,16 @@ query_formatted_get_signals = query0.format(site_id = site_id)
 
 df_get_signals = processing_functions.execute_query_and_return_df_site_info("sqlTelemetry", query_formatted_get_signals)
 print(df_get_signals)
+
+
+#%%
+
+
+# Get the first row value of "OS Name"
+first_os_name = df_get_signals.loc[0, "OS Name"]
+
+# Print the first row value of "OS Name" as a single string
+print(first_os_name)
 
 
 
@@ -236,6 +246,104 @@ print('Source_rising_main_flow:', Source_rising_main_flow_str)
 #%%
 
 
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+from datetime import datetime
+
+def execute_query():
+    try:
+        start_date = f"{start_year.get()}-{start_month.get():02d}-{start_day.get():02d}"
+        end_date = f"{end_year.get()}-{end_month.get():02d}-{end_day.get():02d}"
+        spill_level = int(spill_level_entry.get())
+        
+        # Assuming query7 and processing_functions are defined elsewhere in your code
+        query_formatted_get_spill_hours = query7.format(
+            start_date_spill_query=start_date,
+            end_date_spill_query=end_date,
+            DBAddr_sump=DB_Addr_sump,
+            SourceSystem_sump=SourceSystem_sump,
+            spill_level=spill_level
+        )
+        
+        df_spill_hours = processing_functions.execute_query_and_return_df(
+            start_date, end_date, "sqlTelemetry", query_formatted_get_spill_hours
+        )
+        
+        if df_spill_hours is not None:
+            print("Head of df_spill_hours:")
+            print(df_spill_hours.head(5))
+            df_spill_hours.to_excel(f'../data/raw/site{site_id}_from_{start_date}_to_{end_date}_df_spill_hours.xlsx', index=False)
+            messagebox.showinfo("Success", "Query executed and data saved successfully.")
+        else:
+            messagebox.showwarning("No Data", "No data returned from the query.")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+# Create the main window
+root = tk.Tk()
+root.title("Get Spill Hours")
+
+# Create and place the labels and entry widgets for start date
+ttk.Label(root, text="Start Date:").grid(column=0, row=0, padx=10, pady=5)
+
+start_month = tk.IntVar()
+start_day = tk.IntVar()
+start_year = tk.IntVar()
+
+ttk.Label(root, text="Month:").grid(column=1, row=0, padx=5, pady=5)
+start_month_entry = ttk.Combobox(root, textvariable=start_month, values=list(range(1, 13)))
+start_month_entry.grid(column=2, row=0, padx=5, pady=5)
+
+ttk.Label(root, text="Day:").grid(column=3, row=0, padx=5, pady=5)
+start_day_entry = ttk.Combobox(root, textvariable=start_day, values=list(range(1, 32)))
+start_day_entry.grid(column=4, row=0, padx=5, pady=5)
+
+ttk.Label(root, text="Year:").grid(column=5, row=0, padx=5, pady=5)
+start_year_entry = ttk.Entry(root, textvariable=start_year)
+start_year_entry.grid(column=6, row=0, padx=5, pady=5)
+
+# Create and place the labels and entry widgets for end date
+ttk.Label(root, text="End Date:").grid(column=0, row=1, padx=10, pady=5)
+
+end_month = tk.IntVar()
+end_day = tk.IntVar()
+end_year = tk.IntVar()
+
+ttk.Label(root, text="Month:").grid(column=1, row=1, padx=5, pady=5)
+end_month_entry = ttk.Combobox(root, textvariable=end_month, values=list(range(1, 13)))
+end_month_entry.grid(column=2, row=1, padx=5, pady=5)
+
+ttk.Label(root, text="Day:").grid(column=3, row=1, padx=5, pady=5)
+end_day_entry = ttk.Combobox(root, textvariable=end_day, values=list(range(1, 32)))
+end_day_entry.grid(column=4, row=1, padx=5, pady=5)
+
+ttk.Label(root, text="Year:").grid(column=5, row=1, padx=5, pady=5)
+end_year_entry = ttk.Entry(root, textvariable=end_year)
+end_year_entry.grid(column=6, row=1, padx=5, pady=5)
+
+# Create and place the spill level entry
+ttk.Label(root, text="Spill Level:").grid(column=0, row=2, padx=10, pady=5)
+spill_level_entry = ttk.Entry(root)
+spill_level_entry.grid(column=1, row=2, padx=10, pady=5)
+
+# Create and place the execute button
+execute_button = ttk.Button(root, text="Execute Query", command=execute_query)
+execute_button.grid(column=0, row=3, columnspan=7, padx=10, pady=10)
+
+# Run the application
+root.mainloop()
+
+
+
+
+
+
+
+
+
+#%%
+
 #only used for rainfall
 easting_value = rounded_x
 northing_value = rounded_y
@@ -349,7 +457,9 @@ date_ranges_df.head(5)
 
 
 #%%  
-   
+
+
+#%%  
 # Execute queries and get dataframes
 for index, row in date_ranges_df.iterrows():
     start_date = row['start_date']
