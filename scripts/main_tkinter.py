@@ -26,3 +26,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SiteInformationApp(root)
     root.mainloop()
+    # Access the DataFrame after the main loop
+
+    df_spill_hours_global = app.df_spill_hours

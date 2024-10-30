@@ -28,6 +28,9 @@ class SiteInformationApp:
         self.root.configure(bg='light blue')
 
         self.setup_ui()
+        self.df_spill_hours = None
+        self.site_id = None  # Initialize the instance variable
+        self.default_spill_level = 95
 
     def setup_ui(self):
         tk.Label(self.root, text="Enter Site ID:", bg='light blue').pack(pady=5)
@@ -81,7 +84,8 @@ class SiteInformationApp:
         self.btn_run_spill_query.pack(side="right", pady=5)
 
     def get_signals(self):
-        site_id = int(self.entry_site_id.get())
+        self.site_id = int(self.entry_site_id.get())
+        site_id = self.site_id
         processor = SiteDataProcessor(
             '../ww_site_info/ww_sites_list.xlsx',
             '../ww_site_info/edm_asset_register.xlsx',
@@ -101,6 +105,7 @@ class SiteInformationApp:
             self.output_text_1.insert(tk.END, f"Analogue Signal: {analogue_signal}\n")
             self.output_text_1.insert(tk.END, f"Spill(mm): {spill_mm}\n")
             self.output_text_1.insert(tk.END, f"Pre-Spill (mm): {pre_spill_mm}\n")
+            self.default_spill_level = spill_mm
         else:
             self.output_text_1.insert(tk.END, f"SITEID {site_id} not found in the asset register data.\n")
 
@@ -194,14 +199,14 @@ class SiteInformationApp:
         tk.Label(spill_query_window, text="Enter Spill Level:", bg='light blue').pack(pady=5)
         entry_spill_level = tk.Entry(spill_query_window)
         entry_spill_level.pack(pady=5)
-        entry_spill_level.insert(0, "Default Spill Level")  # Default value for spill level
+        entry_spill_level.insert(0, str(self.default_spill_level))  # Default value for spill level
     
         tk.Label(spill_query_window, text="Select Start Date:", bg='light blue').pack(pady=5)
         start_date_frame = tk.Frame(spill_query_window, bg='light blue')
         start_date_frame.pack(pady=5)
         start_year = ttk.Combobox(start_date_frame, values=[str(year) for year in range(2000, 2030)])
         start_year.pack(side="left")
-        start_year.set("2023")  # Default start year
+        start_year.set("2024")  # Default start year
         start_month = ttk.Combobox(start_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
         start_month.pack(side="left")
         start_month.set("01")  # Default start month
@@ -214,13 +219,13 @@ class SiteInformationApp:
         end_date_frame.pack(pady=5)
         end_year = ttk.Combobox(end_date_frame, values=[str(year) for year in range(2000, 2030)])
         end_year.pack(side="left")
-        end_year.set("2023")  # Default end year
+        end_year.set("2024")  # Default end year
         end_month = ttk.Combobox(end_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
         end_month.pack(side="left")
-        end_month.set("12")  # Default end month
+        end_month.set("10")  # Default end month
         end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
         end_day.pack(side="left")
-        end_day.set("31")  # Default end day
+        end_day.set("01")  # Default end day
     
         btn_run_query = tk.Button(spill_query_window, text="Run Query", command=lambda: self.run_spill_query(entry_spill_level.get(), start_year.get(), start_month.get(), start_day.get(), end_year.get(), end_month.get(), end_day.get()))
         btn_run_query.pack(pady=5)
@@ -237,12 +242,12 @@ class SiteInformationApp:
         print(start_date_spill_query, end_date_spill_query, DBAddr_sump, SourceSystem_sump)
     
         query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
-        df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
-
+        self.df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
+        df_spill_hours = self.df_spill_hours
         if df_spill_hours is not None:
            print("Head of df_spill_hours:")
            print(df_spill_hours.head(5))
-           df_spill_hours.to_excel(f'../data/raw/site{site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
+           df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
         # Implement the logic to run the spill query here
         print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
        
