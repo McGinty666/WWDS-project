@@ -31,6 +31,17 @@ class SiteInformationApp:
         self.df_spill_hours = None
         self.site_id = None  # Initialize the instance variable
         self.default_spill_level = 95
+        self.rounded_x = None  # Initialize rounded_x
+        self.rounded_y = None  # Initialize rounded_y
+        
+        
+        self.df_spill_hours_global =  None
+        self.df_rainfall_global =  None
+        self.df_raw_sump_global =  None
+        self.df_hour_agg_flow_meter_global =  None
+        self.df_raw_flow_meter_global =  None
+        self.start_date_global =  None
+        self.end_date_global =  None
 
     def setup_ui(self):
         tk.Label(self.root, text="Enter Site ID:", bg='light blue').pack(pady=5)
@@ -82,6 +93,10 @@ class SiteInformationApp:
 
         self.btn_run_spill_query = tk.Button(self.root, text="Run Spill Query", command=self.open_spill_query_page)
         self.btn_run_spill_query.pack(side="right", pady=5)
+        
+        # Add the new button
+        self.btn_download_data = tk.Button(self.root, text="Download Rainfall + Raw Sump + Hourly Agg Flow Meter", command=self.open_download_page)
+        self.btn_download_data.pack(side="right", pady=5)
 
     def get_signals(self):
         self.site_id = int(self.entry_site_id.get())
@@ -93,6 +108,8 @@ class SiteInformationApp:
         )
 
         rounded_x, rounded_y = processor.get_rounded_coordinates(site_id)
+        self.rounded_x = rounded_x  # Store rounded_x
+        self.rounded_y = rounded_y  # Store rounded_y
         if rounded_x is not None and rounded_y is not None:
             self.output_text_1.insert(tk.END, f"Rounded coordinates for SITEID {site_id}: X={rounded_x}, Y={rounded_y}\n")
         else:
@@ -250,4 +267,109 @@ class SiteInformationApp:
            df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
         # Implement the logic to run the spill query here
         print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
-       
+        
+        
+    def open_download_page(self):
+        download_window = tk.Toplevel(self.root)
+        download_window.title("Download Data")
+        download_window.configure(bg='light blue')
+    
+        tk.Label(download_window, text="Select Start Date:", bg='light blue').pack(pady=5)
+        start_date_frame = tk.Frame(download_window, bg='light blue')
+        start_date_frame.pack(pady=5)
+        start_year = ttk.Combobox(start_date_frame, values=[str(year) for year in range(2000, 2030)])
+        start_year.pack(side="left")
+        start_year.set("2024")  # Default start year
+        start_month = ttk.Combobox(start_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
+        start_month.pack(side="left")
+        start_month.set("01")  # Default start month
+        start_day = ttk.Combobox(start_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
+        start_day.pack(side="left")
+        start_day.set("01")  # Default start day
+    
+        tk.Label(download_window, text="Select End Date:", bg='light blue').pack(pady=5)
+        end_date_frame = tk.Frame(download_window, bg='light blue')
+        end_date_frame.pack(pady=5)
+        end_year = ttk.Combobox(end_date_frame, values=[str(year) for year in range(2000, 2030)])
+        end_year.pack(side="left")
+        end_year.set("2024")  # Default end year
+        end_month = ttk.Combobox(end_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
+        end_month.pack(side="left")
+        end_month.set("10")  # Default end month
+        end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
+        end_day.pack(side="left")
+        end_day.set("01")  # Default end day
+    
+        tk.Label(download_window, text="Coordinates for Radar Rainfall Download:", bg='light blue').pack(pady=5)
+        coordinates_frame = tk.Frame(download_window, bg='light blue')
+        coordinates_frame.pack(pady=5)
+        entry_x = tk.Entry(coordinates_frame)
+        entry_x.pack(side="left")
+        entry_x.insert(0, str(self.rounded_x))  # Default value for X coordinate
+        entry_y = tk.Entry(coordinates_frame)
+        entry_y.pack(side="left")
+        entry_y.insert(0, str(self.rounded_y))  # Default value for Y coordinate
+    
+        tk.Label(download_window, text="DB_Addr Sump:", bg='light blue').pack(pady=5)
+        entry_db_addr_sump = tk.Entry(download_window)
+        entry_db_addr_sump.pack(pady=5)
+        entry_db_addr_sump.insert(0, self.DB_Addr_sump_str.get())  # Default value for DB_Addr Sump
+    
+        tk.Label(download_window, text="DB_Addr Flow Meter:", bg='light blue').pack(pady=5)
+        entry_db_addr_flow_meter = tk.Entry(download_window)
+        entry_db_addr_flow_meter.pack(pady=5)
+        entry_db_addr_flow_meter.insert(0, self.DB_Addr_rising_main_flow_str.get())  # Default value for DB_Addr Flow Meter
+    
+        btn_download = tk.Button(download_window, text="Download", command=lambda: self.download_data(
+            start_year.get(), start_month.get(), start_day.get(),
+            end_year.get(), end_month.get(), end_day.get(),
+            entry_x.get(), entry_y.get(),
+            entry_db_addr_sump.get(), self.Source_sump_var.get(),
+            entry_db_addr_flow_meter.get(), self.Source_rising_main_flow_str.get()
+        ))
+        btn_download.pack(pady=5)
+
+
+    def download_data(self, start_year, start_month, start_day, end_year, end_month, end_day, easting_value, northing_value, DBAddr_sump, SourceSystem_sump, DBAddr_flow_meter, sourcesystem_flow_meter):
+        # Implement the logic to download the data
+        start_date = f"{start_year}-{start_month}-{start_day}"
+        end_date = f"{end_year}-{end_month}-{end_day}"
+        queries = processing_functions.read_queries('queries_v3.sql')
+        query1 = queries['query1']
+        query2 = queries['query2']
+        query3 = queries['query3']
+        query4 = queries['query4']
+        query5 = queries['query5']
+        DBAddr_sump = self.DB_Addr_sump_str.get()
+        SourceSystem_sump = self.Source_sump_var.get()
+        DBAddr_flow_meter = self.DB_Addr_rising_main_flow_str.get()
+        sourcesystem_flow_meter = self.Source_rising_main_flow_str.get()
+        query_formatted_rainfall = query1.format(easting=easting_value, northing=northing_value, start_date=start_date, end_date=end_date)
+        query_formatted_raw_sump = query2.format(start_date=start_date, end_date=end_date, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump)
+        query_formatted_hour_agg_flow_meter = query3.format(start_date=start_date, end_date=end_date, DBAddr_flow_meter=DBAddr_flow_meter , sourcesystem_flow_meter=sourcesystem_flow_meter)
+        query_formatted_raw_flow_meter = query5.format(start_date=start_date, end_date=end_date, DBAddr_flow_meter=DBAddr_flow_meter , sourcesystem_flow_meter=sourcesystem_flow_meter)
+        df_rainfall = processing_functions.execute_query_and_return_df(start_date, end_date,"DALMeteorology", query_formatted_rainfall)
+        df_raw_sump = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_sump)
+        df_hour_agg_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_hour_agg_flow_meter)
+        df_raw_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_flow_meter)
+        messagebox.showinfo("Download", "Data download initiated.")
+        # Print the head(5) of each DataFrame and save to Excel
+        if df_rainfall is not None:
+            print("Head of df_rainfall:")
+            print(df_rainfall.head(5))        
+        if df_raw_sump is not None:
+            print("Head of df_raw_sump:")
+            print(df_raw_sump.head(5))     
+        if df_hour_agg_flow_meter is not None:
+            print("Head of df_hour_agg_flow_meter:")
+            print(df_hour_agg_flow_meter.head(5))      
+        if df_raw_flow_meter is not None:
+            print("Head of df_raw_flow_meter:")
+            print(df_raw_flow_meter.head(5))
+        #self.df_spill_hours_global = df_spill_hours
+        self.df_rainfall_global = df_rainfall
+        self.df_raw_sump_global = df_raw_sump
+        self.df_hour_agg_flow_meter_global = df_hour_agg_flow_meter
+        self.df_raw_flow_meter_global = df_raw_flow_meter
+        self.start_date_global = start_date
+        self.end_date_global = end_date
