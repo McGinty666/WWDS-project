@@ -22,6 +22,8 @@ import math
 import tkinter as tk
 from Class_tkinter import SiteInformationApp  # Assuming your class is in a file named site_information_app.py
 
+
+#%%
 if __name__ == "__main__":
     root = tk.Tk()
     app = SiteInformationApp(root)
@@ -36,6 +38,9 @@ if __name__ == "__main__":
     end_date_downloaded = app.end_date_global
 
 #%%
+
+
+'''
 import os
 import pandas as pd
 
@@ -70,11 +75,15 @@ save_dataframes(
     df_hour_agg_flow_meter=df_hour_agg_flow_meter,
     df_raw_flow_meter=df_raw_flow_meter
 )
-
+'''
 #%%
 # Define file paths
 
-'''
+
+import os
+import pandas as pd
+
+
 file_paths = {
     "df_spill_hours": "../data/raw/df_spill_hours.xlsx",
     "df_rainfall": "../data/raw/df_rainfall.xlsx",
@@ -104,18 +113,28 @@ df_rainfall_loaded = loaded_dataframes["df_rainfall"]
 df_raw_sump_loaded = loaded_dataframes["df_raw_sump"]
 df_hour_agg_flow_meter_loaded = loaded_dataframes["df_hour_agg_flow_meter"]
 df_raw_flow_meter_loaded = loaded_dataframes["df_raw_flow_meter"]
-'''
+
 
 
 #%%
-
+'''
 start_date_plot = start_date_downloaded
 end_date_plot = end_date_downloaded
 df_sump_filtered = df_raw_sump
 df_rainfall_filtered = df_rainfall
 df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter
+'''
+
+start_date_plot = '01-10-2024'
+end_date_plot = '20-10-2024'
+df_sump_filtered = df_raw_sump_loaded
+df_raw_sump = df_sump_filtered
 
 
+df_sump_filtered = df_sump_filtered.sort_values(by="TimeGMT")
+
+
+df_rainfall = df_rainfall_loaded
 #Not sure if this is needed? assuming the rainfall is in local time?
 # Convert the ReadingDate to datetime and localize to 'Europe/London'
 df_rainfall['timestamp'] = pd.to_datetime(df_rainfall['ReadingDate'], format='%Y%m%d%H%M')
@@ -127,6 +146,26 @@ df_rainfall['timestamp'] = df_rainfall['timestamp'].dt.tz_localize('Europe/Londo
 # Convert the 'timestamp' column to UTC
 df_rainfall['time_gmt'] = df_rainfall['timestamp'].dt.tz_convert('UTC')
 df_rainfall['time_gmt_n'] = df_rainfall['time_gmt'].dt.tz_localize(None)
+
+df_rainfall_filtered = df_rainfall.sort_values(by="time_gmt_n")
+
+
+
+
+df_hour_agg_flow_meter = df_hour_agg_flow_meter_loaded
+
+
+df_hour_agg_flow_meter['TimeGMT'] = pd.to_datetime(
+    df_hour_agg_flow_meter['Year'].astype(str) + '-' +
+    df_hour_agg_flow_meter['Month'].astype(str) + '-' +
+    df_hour_agg_flow_meter['Day'].astype(str) + ' ' +
+    df_hour_agg_flow_meter['Hour'].astype(str) + ':00:00'
+)
+df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter.sort_values(by="TimeGMT")
+# Drop unnecessary columns
+df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter_filtered.drop(columns=['stddev_EValue', 'count', 'DbAddr'])
+
+
 
 
 
@@ -140,7 +179,8 @@ from Plotting_raw_data_class import PlotWindow
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump, df_rainfall, df_hour_agg_flow_meter)
+    'app = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump, spill_level)'
+    app = PlotWindow(root, "2024-10-01", "2024-10-20", df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall_filtered, df_hour_agg_flow_meter=df_hour_agg_flow_meter_filtered, spill_level=95, sump_ylim=100)
     root.mainloop()
 
 
