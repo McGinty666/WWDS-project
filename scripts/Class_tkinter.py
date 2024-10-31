@@ -21,27 +21,33 @@ import math
 
 class SiteInformationApp:
     def __init__(self, root):
-        self.filtered_df_rising_main_flow = None
         self.filtered_df_sump = None
         self.root = root
         self.root.title("Site Information")
         self.root.configure(bg='light blue')
-
+        
         self.setup_ui()
         self.df_spill_hours = None
         self.site_id = None  # Initialize the instance variable
         self.default_spill_level = 95
-        self.rounded_x = None  # Initialize rounded_x
-        self.rounded_y = None  # Initialize rounded_y
+        self.rounded_x = 5000  # Example value
+        self.rounded_y = 5000  # Example value
+        self.actual_x = 337600   # Example value
+        self.actual_y = 161600  # Example value
+        self.DB_Addr_sump_str = tk.StringVar(value="default_sump_address")  # Example value
+        self.DB_Addr_rising_main_flow_str = tk.StringVar(value="default_flow_address")  # Example value
+        self.Source_sump_var = tk.StringVar(value="default_source_sump")  # Example value
+        self.Source_rising_main_flow_str = tk.StringVar(value="default_source_flow")  # Example value
+        
+        self.df_spill_hours_global = None
+        self.df_rainfall_global = None
+        self.df_raw_sump_global = None
+        self.df_hour_agg_flow_meter_global = None
+        self.df_raw_flow_meter_global = None
+        self.start_date_global = None
+        self.end_date_global = None
         
         
-        self.df_spill_hours_global =  None
-        self.df_rainfall_global =  None
-        self.df_raw_sump_global =  None
-        self.df_hour_agg_flow_meter_global =  None
-        self.df_raw_flow_meter_global =  None
-        self.start_date_global =  None
-        self.end_date_global =  None
 
     def setup_ui(self):
         tk.Label(self.root, text="Enter Site ID:", bg='light blue').pack(pady=5)
@@ -273,7 +279,7 @@ class SiteInformationApp:
         download_window = tk.Toplevel(self.root)
         download_window.title("Download Data")
         download_window.configure(bg='light blue')
-    
+
         tk.Label(download_window, text="Select Start Date:", bg='light blue').pack(pady=5)
         start_date_frame = tk.Frame(download_window, bg='light blue')
         start_date_frame.pack(pady=5)
@@ -286,7 +292,7 @@ class SiteInformationApp:
         start_day = ttk.Combobox(start_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
         start_day.pack(side="left")
         start_day.set("01")  # Default start day
-    
+
         tk.Label(download_window, text="Select End Date:", bg='light blue').pack(pady=5)
         end_date_frame = tk.Frame(download_window, bg='light blue')
         end_date_frame.pack(pady=5)
@@ -299,7 +305,7 @@ class SiteInformationApp:
         end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
         end_day.pack(side="left")
         end_day.set("01")  # Default end day
-    
+
         tk.Label(download_window, text="Coordinates for Radar Rainfall Download:", bg='light blue').pack(pady=5)
         coordinates_frame = tk.Frame(download_window, bg='light blue')
         coordinates_frame.pack(pady=5)
@@ -309,17 +315,17 @@ class SiteInformationApp:
         entry_y = tk.Entry(coordinates_frame)
         entry_y.pack(side="left")
         entry_y.insert(0, str(self.rounded_y))  # Default value for Y coordinate
-    
+
         tk.Label(download_window, text="DB_Addr Sump:", bg='light blue').pack(pady=5)
         entry_db_addr_sump = tk.Entry(download_window)
         entry_db_addr_sump.pack(pady=5)
         entry_db_addr_sump.insert(0, self.DB_Addr_sump_str.get())  # Default value for DB_Addr Sump
-    
+
         tk.Label(download_window, text="DB_Addr Flow Meter:", bg='light blue').pack(pady=5)
         entry_db_addr_flow_meter = tk.Entry(download_window)
         entry_db_addr_flow_meter.pack(pady=5)
         entry_db_addr_flow_meter.insert(0, self.DB_Addr_rising_main_flow_str.get())  # Default value for DB_Addr Flow Meter
-    
+
         btn_download = tk.Button(download_window, text="Download", command=lambda: self.download_data(
             start_year.get(), start_month.get(), start_day.get(),
             end_year.get(), end_month.get(), end_day.get(),
@@ -329,7 +335,41 @@ class SiteInformationApp:
         ))
         btn_download.pack(pady=5)
 
+        # Add the refine button to the download window
+        refine_button = tk.Button(download_window, text="Refine rainfall area selection", command=self.open_refine_window)
+        refine_button.pack(pady=5)
+        
 
+    def create_buttons(self):
+        self.refine_button = tk.Button(self.root, text="Refine rainfall area selection", command=self.open_refine_window)
+        self.refine_button.pack()
+    
+        self.download_button = tk.Button(self.root, text="Download Data", command=self.open_download_page)
+        self.download_button.pack()
+    
+    def open_refine_window(self):
+        refine_window = tk.Toplevel(self.root)
+        refine_window.title("Refine Rainfall Area Selection")
+    
+        canvas = tk.Canvas(refine_window, width=600, height=600)
+        canvas.pack()
+    
+        # Draw the box defined by 1000m eastward and 1000m north from the rounded point
+        box_x1 = self.rounded_x
+        box_y1 = self.rounded_y
+        box_x2 = self.rounded_x + 1000
+        box_y2 = self.rounded_y + 1000
+    
+        canvas.create_rectangle(box_x1, box_y1, box_x2, box_y2, outline="blue", width=2)
+    
+        # Draw the rounded point
+        canvas.create_oval(self.rounded_x - 5, self.rounded_y - 5, self.rounded_x + 5, self.rounded_y + 5, fill="red")
+    
+        # Draw the actual point
+        canvas.create_oval(self.actual_x - 5, self.actual_y - 5, self.actual_x + 5, self.actual_y + 5, fill="green")
+        
+        
+        
     def download_data(self, start_year, start_month, start_day, end_year, end_month, end_day, easting_value, northing_value, DBAddr_sump, SourceSystem_sump, DBAddr_flow_meter, sourcesystem_flow_meter):
         # Implement the logic to download the data
         start_date = f"{start_year}-{start_month}-{start_day}"

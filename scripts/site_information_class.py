@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 
 
-
 class SiteDataProcessor:
     def __init__(self, sites_list_path, asset_register_path, flowmeter_signals_path):
         self.df_sites_list = pd.read_excel(sites_list_path)
