@@ -18,6 +18,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import math
+from PlotRainfall import MapWindow
 
 class SiteInformationApp:
     def __init__(self, root):
@@ -47,7 +48,8 @@ class SiteInformationApp:
         self.start_date_global = None
         self.end_date_global = None
         
-        
+        self.create_buttons()
+        self.open_refine_window()
 
     def setup_ui(self):
         tk.Label(self.root, text="Enter Site ID:", bg='light blue').pack(pady=5)
@@ -348,25 +350,7 @@ class SiteInformationApp:
         self.download_button.pack()
     
     def open_refine_window(self):
-        refine_window = tk.Toplevel(self.root)
-        refine_window.title("Refine Rainfall Area Selection")
-    
-        canvas = tk.Canvas(refine_window, width=600, height=600)
-        canvas.pack()
-    
-        # Draw the box defined by 1000m eastward and 1000m north from the rounded point
-        box_x1 = self.rounded_x
-        box_y1 = self.rounded_y
-        box_x2 = self.rounded_x + 1000
-        box_y2 = self.rounded_y + 1000
-    
-        canvas.create_rectangle(box_x1, box_y1, box_x2, box_y2, outline="blue", width=2)
-    
-        # Draw the rounded point
-        canvas.create_oval(self.rounded_x - 5, self.rounded_y - 5, self.rounded_x + 5, self.rounded_y + 5, fill="red")
-    
-        # Draw the actual point
-        canvas.create_oval(self.actual_x - 5, self.actual_y - 5, self.actual_x + 5, self.actual_y + 5, fill="green")
+        self.inner_instance = MapWindow(self.root, self)
         
         
         

@@ -6,17 +6,23 @@ Created on Thu Oct 31 23:14:39 2024
 """
 
 import tkinter as tk
+ 
 
 class MapWindow:
-    def __init__(self, root):
-        self.root = root
+    def __init__(self, root, app):
+        self.root = tk.Toplevel(root)
         self.root.title("Map Window")
-        
+               
         # Define points with dummy coordinates
-        self.point1 = (350500, 150500)
-        self.site_coord = (350000, 150000)
+        
+        self.rounded_x = app.rounded_x
+        self.rounded_y = app.rounded_y
+        self.point1 = (self.rounded_x, self.rounded_y)
+        self.actual_x = app.actual_x
+        self.actual_y = app.actual_y
+        self.site_coord = (self.actual_x, self.actual_y)
         self.point2 = self.site_coord
-        self.site_id = 19505
+        self.site_id = app.site_id
         '''
         # Initial coordinates for the draw box around the points
         self.left_easting = min(self.point1[0], self.point2[0])
@@ -201,6 +207,6 @@ class MapWindow:
 
 
 # Create the main window and run the application
-root = tk.Tk()
-app = MapWindow(root)
-root.mainloop()
+#root = tk.Tk()
+#app = MapWindow(root)
+#root.mainloop()
