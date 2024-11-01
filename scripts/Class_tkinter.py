@@ -269,23 +269,23 @@ class SiteInformationApp:
         btn_run_query.grid(row=3, column=0, columnspan=2, pady=5)
 
     def run_spill_query(self, spill_level, start_year, start_month, start_day, end_year, end_month, end_day):
-            start_date_spill_query = f"{start_year}-{start_month}-{start_day}"
-            end_date_spill_query = f"{end_year}-{end_month}-{end_day}"
-            queries = processing_functions.read_queries('queries_v3.sql')
-            query7 = queries['query7']
-            DBAddr_sump = self.DB_Addr_sump_str.get()
-            SourceSystem_sump = self.Source_sump_var.get()
-            print(start_date_spill_query, end_date_spill_query, DBAddr_sump, SourceSystem_sump)
-        
-            query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
-            self.df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
-            df_spill_hours = self.df_spill_hours
-            if df_spill_hours is not None:
-               print("Head of df_spill_hours:")
-               print(df_spill_hours.head(5))
-               df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
-            # Implement the logic to run the spill query here
-            print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
+        start_date_spill_query = f"{start_year}-{start_month}-{start_day}"
+        end_date_spill_query = f"{end_year}-{end_month}-{end_day}"
+        queries = processing_functions.read_queries('queries_v3.sql')
+        query7 = queries['query7']
+        DBAddr_sump = self.DB_Addr_sump_str.get()
+        SourceSystem_sump = self.Source_sump_var.get()
+        print(start_date_spill_query, end_date_spill_query, DBAddr_sump, SourceSystem_sump)
+    
+        query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
+        self.df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
+        df_spill_hours = self.df_spill_hours
+        if df_spill_hours is not None:
+           print("Head of df_spill_hours:")
+           print(df_spill_hours.head(5))
+           df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
+        # Implement the logic to run the spill query here
+        print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
             
         
     def open_download_page(self):
@@ -342,7 +342,8 @@ class SiteInformationApp:
         btn_download = tk.Button(download_window, text="Download", command=lambda: self.download_data(
             start_year.get(), start_month.get(), start_day.get(),
             end_year.get(), end_month.get(), end_day.get(),
-            entry_x.get(), entry_y.get(),
+            self.left_easting_bb, self.right_easting_bb, 
+            self.bottom_northing_bb, self.top_northing_bb,
             entry_db_addr_sump.get(), self.Source_sump_var.get(),
             entry_db_addr_flow_meter.get(), self.Source_rising_main_flow_str.get()
         ))
@@ -354,7 +355,7 @@ class SiteInformationApp:
             
 
 
-    def download_data(self, start_year, start_month, start_day, end_year, end_month, end_day, easting_value, northing_value, DBAddr_sump, SourceSystem_sump, DBAddr_flow_meter, sourcesystem_flow_meter):
+    def download_data(self, start_year, start_month, start_day, end_year, end_month, end_day, min_easting, max_easting, min_northing, max_northing, DBAddr_sump, SourceSystem_sump, DBAddr_flow_meter, sourcesystem_flow_meter):
         # Implement the logic to download the data
         start_date = f"{start_year}-{start_month}-{start_day}"
         end_date = f"{end_year}-{end_month}-{end_day}"
@@ -368,7 +369,8 @@ class SiteInformationApp:
         SourceSystem_sump = self.Source_sump_var.get()
         DBAddr_flow_meter = self.DB_Addr_rising_main_flow_str.get()
         sourcesystem_flow_meter = self.Source_rising_main_flow_str.get()
-        query_formatted_rainfall = query1.format(easting=easting_value, northing=northing_value, start_date=start_date, end_date=end_date)
+        #query_formatted_rainfall = query1.format(easting=easting_value, northing=northing_value, start_date=start_date, end_date=end_date)
+        query_formatted_rainfall = query1.format(min_easting = min_easting, max_easting=max_easting, min_northing = min_northing, max_northing = max_northing, start_date=start_date, end_date=end_date)
         query_formatted_raw_sump = query2.format(start_date=start_date, end_date=end_date, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump)
         query_formatted_hour_agg_flow_meter = query3.format(start_date=start_date, end_date=end_date, DBAddr_flow_meter=DBAddr_flow_meter , sourcesystem_flow_meter=sourcesystem_flow_meter)
         query_formatted_raw_flow_meter = query5.format(start_date=start_date, end_date=end_date, DBAddr_flow_meter=DBAddr_flow_meter , sourcesystem_flow_meter=sourcesystem_flow_meter)
@@ -376,7 +378,7 @@ class SiteInformationApp:
         df_raw_sump = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_sump)
         df_hour_agg_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_hour_agg_flow_meter)
         df_raw_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_flow_meter)
-        messagebox.showinfo("Download", "Data download initiated.")
+        messagebox.showinfo("Download", "Data download complete.")
         # Print the head(5) of each DataFrame and save to Excel
         if df_rainfall is not None:
             print("Head of df_rainfall:")

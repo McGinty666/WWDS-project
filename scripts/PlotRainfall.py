@@ -11,6 +11,7 @@ import tkinter as tk
 class MapWindow:
     def __init__(self, parent, app):
         self.root = parent
+        self.app = app
         self.root.title("Map Window")
 
         # Create a main frame to hold all widgets
@@ -65,7 +66,10 @@ class MapWindow:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
     
-    
+        # Create the "Set Rainfall Extents" button
+        set_extents_button = tk.Button(main_frame, text="Set Rainfall Extents", command=self.set_rainfall_extents)
+        set_extents_button.grid(row=1, column=0, padx=10, pady=10)
+        
     
     def draw_box(self):
         self.canvas.delete("all")
@@ -210,5 +214,12 @@ class MapWindow:
         self.draw_box()
         self.update_labels()
 
-
+    def set_rainfall_extents(self):
+        # Make the variables available in the parent class
+        self.root.destroy()    
+        # Assuming 'app' is the parent class instance
+        self.app.right_easting_bb = self.right_easting_bb
+        self.app.left_easting_bb = self.left_easting_bb
+        self.app.top_northing_bb = self.top_northing_bb
+        self.app.bottom_northing_bb = self.bottom_northing_bb
 

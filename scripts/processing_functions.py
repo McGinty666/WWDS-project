@@ -69,7 +69,7 @@ def execute_query_and_return_df(start_date, end_date, connection_name, query):
             # Extract the first element from tuple column names
             df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
             if 'TimeGMT' in df.columns:
-                df['TimeGMT'] = pd.to_datetime(df['TimeGMT']).dt.tz_localize(None)
+                df['TimeGMT'] = pd.to_datetime(df['TimeGMT'], utc=True).dt.tz_localize(None)
             return df
 
 

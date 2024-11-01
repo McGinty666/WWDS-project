@@ -26,6 +26,7 @@ from Class_tkinter import SiteInformationApp  # Assuming your class is in a file
 if __name__ == "__main__":
     root = tk.Tk()
     app = SiteInformationApp(root)
+    app.create_buttons()
     root.mainloop()
     # Access the DataFrame after the main loop
     df_spill_hours = app.df_spill_hours
@@ -35,6 +36,8 @@ if __name__ == "__main__":
     df_raw_flow_meter = app.df_raw_flow_meter_global
     start_date_downloaded = app.start_date_global
     end_date_downloaded = app.end_date_global
+
+
 
 #%%
 
@@ -77,7 +80,7 @@ save_dataframes(
 '''
 #%%
 # Define file paths
-
+'''
 
 import os
 import pandas as pd
@@ -113,7 +116,7 @@ df_raw_sump_loaded = loaded_dataframes["df_raw_sump"]
 df_hour_agg_flow_meter_loaded = loaded_dataframes["df_hour_agg_flow_meter"]
 df_raw_flow_meter_loaded = loaded_dataframes["df_raw_flow_meter"]
 
-
+'''
 
 #%%
 '''
@@ -123,7 +126,7 @@ df_sump_filtered = df_raw_sump
 df_rainfall_filtered = df_rainfall
 df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter
 '''
-
+'''
 start_date_plot = '01-10-2024'
 end_date_plot = '20-10-2024'
 df_sump_filtered = df_raw_sump_loaded
@@ -170,9 +173,11 @@ df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter_filtered.drop(columns=[
 
 
 spill_level = 95
+
+'''
 #%%
 
-
+'''
 
 from Plotting_raw_data_class import PlotWindow
 
@@ -182,8 +187,7 @@ if __name__ == "__main__":
     app = PlotWindow(root, "2024-10-01", "2024-10-20", df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall_filtered, df_hour_agg_flow_meter=df_hour_agg_flow_meter_filtered, spill_level=95, sump_ylim=100)
     root.mainloop()
 
-
+'''
 
 
 #%%
-

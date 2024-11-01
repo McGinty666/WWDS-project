@@ -28,8 +28,8 @@ SELECT
 FROM 
     [WDC].[NimrodReadings]
 WHERE 
-    [Easting] = {easting}
-    AND [Northing] = {northing}
+    [Easting] BETWEEN '{min_easting}' AND '{max_easting}' - 1
+    AND [Northing] BETWEEN '{min_northing}' AND '{max_northing}' - 1
     AND CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE) BETWEEN '{start_date}' AND '{end_date}'
 ORDER BY 
     CAST(CONCAT([Year], '-', [Month], '-', [Day]) AS DATE);
