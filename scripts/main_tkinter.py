@@ -22,7 +22,7 @@ import math
 import tkinter as tk
 from Class_tkinter import SiteInformationApp  # Assuming your class is in a file named site_information_app.py
 
-
+#%%
 if __name__ == "__main__":
     root = tk.Tk()
     app = SiteInformationApp(root)

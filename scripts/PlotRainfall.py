@@ -9,12 +9,21 @@ import tkinter as tk
  
 
 class MapWindow:
-    def __init__(self, root, app):
-        self.root = tk.Toplevel(root)
+    def __init__(self, parent, app):
+        self.root = parent
         self.root.title("Map Window")
-               
+
+        # Create a main frame to hold all widgets
+        main_frame = tk.Frame(self.root)
+        main_frame.grid(row=0, column=0, sticky="nsew")
+
         # Define points with dummy coordinates
-        
+        self.point1 = (350500, 150500)
+        self.site_coord = (350000, 150000)
+        #self.point2 = self.site_coord
+        self.site_id = 19505
+
+        # Define points with dummy coordinates
         self.rounded_x = app.rounded_x
         self.rounded_y = app.rounded_y
         self.point1 = (self.rounded_x, self.rounded_y)
@@ -23,43 +32,40 @@ class MapWindow:
         self.site_coord = (self.actual_x, self.actual_y)
         self.point2 = self.site_coord
         self.site_id = app.site_id
-        '''
+
         # Initial coordinates for the draw box around the points
-        self.left_easting = min(self.point1[0], self.point2[0])
-        self.right_easting = self.left_easting + 1000
-        self.top_northing = max(self.point1[1], self.point2[1]) + 1000
-        self.bottom_northing = self.top_northing - 1000
-        '''
-        
-        # Initial coordinates for the draw box around the points
-        self.left_easting = min(self.point1[0], self.point2[0]) -5000
+        self.left_easting = self.point1[0] - 5000
         self.right_easting = self.left_easting + 5000
-        self.top_northing = max(self.point1[1], self.point2[1]) + 5000
+        self.top_northing = self.point1[1] -5000
         self.bottom_northing = self.top_northing - 5000
-        
+
         self.left_easting_bb = self.point1[0]
         self.right_easting_bb = self.point1[0] + 1000
         self.top_northing_bb = self.point1[1] + 1000
         self.bottom_northing_bb = self.point1[1]
-        
-        # Create canvas
-        self.canvas = tk.Canvas(root, width=500, height=500, bg="white")
-        self.canvas.grid(row=1, column=1, rowspan=3, columnspan=3)
-        
+
+        # Canvas for map display
+        self.canvas = tk.Canvas(main_frame, width=500, height=500, bg="white")
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+
         # Create a frame for the coordinates display
-        self.coord_frame = tk.Frame(root)
+        self.coord_frame = tk.Frame(self.root)
         self.coord_frame.grid(row=1, column=4, rowspan=3)
-        
+
         # Draw initial box and points
         self.draw_box()
-        
+
         # Create buttons
         self.create_buttons()
-        
+
         # Create labels for current coordinates
         self.create_labels()
-        
-        
+
+        # Configure the root window to expand to fit the content
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+    
+    
     
     def draw_box(self):
         self.canvas.delete("all")
@@ -206,7 +212,3 @@ class MapWindow:
 
 
 
-# Create the main window and run the application
-#root = tk.Tk()
-#app = MapWindow(root)
-#root.mainloop()

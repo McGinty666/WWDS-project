@@ -41,6 +41,15 @@ class SiteDataProcessor:
         else:
             return None, None
     
+    def get_exact_coordinates(self, site_id):
+        site_data = self.df_sites_list[self.df_sites_list['SITEID'] == site_id]
+        if not site_data.empty:
+            x_value = float(site_data['X'].values.item())
+            y_value = float(site_data['Y'].values.item())
+            return x_value, y_value
+        else:
+            return None, None
+    
     def get_sump_analogue(self, site_id):
         asset_data = self.df_asset_register[self.df_asset_register['Site ID'] == site_id]
         if not asset_data.empty:
@@ -76,6 +85,12 @@ if __name__ == "__main__":
     rounded_x, rounded_y = processor.get_rounded_coordinates(site_id)
     if rounded_x is not None and rounded_y is not None:
         print(f"Rounded coordinates for SITEID {site_id}: X={rounded_x}, Y={rounded_y}")
+    else:
+        print(f"SITEID {site_id} not found in the data.")
+
+    exact_x, exact_y = processor.get_exact_coordinates(site_id)
+    if exact_x is not None and exact_y is not None:
+        print(f"Exact coordinates for SITEID {site_id}: X={exact_x}, Y={exact_y}")
     else:
         print(f"SITEID {site_id} not found in the data.")
 

@@ -20,6 +20,7 @@ from tkinter import messagebox
 import math
 from PlotRainfall import MapWindow
 
+
 class SiteInformationApp:
     def __init__(self, root):
         self.filtered_df_sump = None
@@ -49,47 +50,53 @@ class SiteInformationApp:
         self.end_date_global = None
         
         self.create_buttons()
-        self.open_refine_window()
+
 
     def setup_ui(self):
-        tk.Label(self.root, text="Enter Site ID:", bg='light blue').pack(pady=5)
+        tk.Label(self.root, text="Enter Site ID:", bg='light blue').grid(row=0, column=0, pady=5, sticky='w')
         self.entry_site_id = tk.Entry(self.root)
-        self.entry_site_id.pack(pady=5)
+        self.entry_site_id.grid(row=0, column=1, pady=5, sticky='w')
 
         self.btn_get_signals = tk.Button(self.root, text="Get Signals", command=self.get_signals)
-        self.btn_get_signals.pack(pady=5)
+        self.btn_get_signals.grid(row=1, column=0, columnspan=2, pady=5)
 
         self.output_text_1 = scrolledtext.ScrolledText(self.root, width=80, height=10)
-        self.output_text_1.pack(pady=5)
+        self.output_text_1.grid(row=2, column=0, columnspan=2, pady=5)
         self.output_text_1.configure(bg="light blue")
 
         frame = tk.Frame(self.root, bg='light blue')
-        frame.pack(pady=5)
+        frame.grid(row=3, column=0, columnspan=2, pady=5)
 
         self.tree = ttk.Treeview(frame)
-        self.tree.pack(side="left")
+        self.tree.grid(row=0, column=0)
 
         scrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        scrollbar.pack(side="bottom", fill="x")
+        scrollbar.grid(row=1, column=0, sticky='ew')
         self.tree.configure(xscrollcommand=scrollbar.set)
 
         right_frame = tk.Frame(self.root, bg='light blue')
-        right_frame.pack(side="right", padx=10, pady=10, anchor='ne')
+        right_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='ne')
 
         self.dropdown_var_sump = tk.StringVar(value="Select level analog signal")
         self.dropdown_menu_sump = tk.OptionMenu(right_frame, self.dropdown_var_sump, "Select level analog signal (dropdown)")
-        self.dropdown_menu_sump.pack(side="left", pady=5)
+        self.dropdown_menu_sump.grid(row=0, column=0, pady=5)
 
         self.confirm_button_sump = tk.Button(right_frame, text="Confirm selected level analog", command=self.get_value_sump)
-        self.confirm_button_sump.pack(side="right", pady=5)
+        self.confirm_button_sump.grid(row=0, column=1, pady=5)
 
         self.dropdown_var = tk.StringVar(value="Select flow meter signal")
         self.dropdown_menu = tk.OptionMenu(right_frame, self.dropdown_var, "Select flow meter signal (dropdown)")
-        self.dropdown_menu.pack(side="left", pady=5)
+        self.dropdown_menu.grid(row=1, column=0, pady=5)
 
         self.confirm_button = tk.Button(right_frame, text="Confirm flow meter signal", command=self.get_value)
-        self.confirm_button.pack(side="right", pady=5)
+        self.confirm_button.grid(row=1, column=1, pady=5)
 
+        self.btn_run_spill_query = tk.Button(self.root, text="Run Spill Query", command=self.open_spill_query_page)
+        self.btn_run_spill_query.grid(row=5, column=0, pady=5, sticky='e')
+        
+        self.btn_download_data = tk.Button(self.root, text="Download Rainfall + Raw Sump + Hourly Agg Flow Meter", command=self.open_download_page)
+        self.btn_download_data.grid(row=5, column=1, pady=5, sticky='w')
+            
         self.DB_Addr_rising_main_flow = tk.StringVar()
         self.Source_rising_main_flow = tk.StringVar()
         self.DB_Addr_rising_main_flow_str = tk.StringVar()
@@ -99,12 +106,8 @@ class SiteInformationApp:
         self.DB_Addr_sump_str = tk.StringVar()
         self.Source_sump_str = tk.StringVar()
 
-        self.btn_run_spill_query = tk.Button(self.root, text="Run Spill Query", command=self.open_spill_query_page)
-        self.btn_run_spill_query.pack(side="right", pady=5)
-        
-        # Add the new button
-        self.btn_download_data = tk.Button(self.root, text="Download Rainfall + Raw Sump + Hourly Agg Flow Meter", command=self.open_download_page)
-        self.btn_download_data.pack(side="right", pady=5)
+
+
 
     def get_signals(self):
         self.site_id = int(self.entry_site_id.get())
@@ -118,10 +121,20 @@ class SiteInformationApp:
         rounded_x, rounded_y = processor.get_rounded_coordinates(site_id)
         self.rounded_x = rounded_x  # Store rounded_x
         self.rounded_y = rounded_y  # Store rounded_y
+
         if rounded_x is not None and rounded_y is not None:
             self.output_text_1.insert(tk.END, f"Rounded coordinates for SITEID {site_id}: X={rounded_x}, Y={rounded_y}\n")
         else:
             self.output_text_1.insert(tk.END, f"SITEID {site_id} not found in the data.\n")
+
+        actual_x, actual_y = processor.get_exact_coordinates(site_id)
+        if actual_x is not None and actual_y is not None:
+            self.output_text_1.insert(tk.END, f"Exact coordinates for SITEID {site_id}: X={actual_x}, Y={actual_y}\n")
+        else:
+            self.output_text_1.insert(tk.END, f"SITEID {site_id} not found in the data.\n")
+        self.actual_x = actual_x
+        self.actual_y = actual_y
+
 
         analogue_server, analogue_signal, spill_mm, pre_spill_mm = processor.get_sump_analogue(site_id)
         if analogue_server is not None and analogue_signal is not None:
@@ -221,113 +234,111 @@ class SiteInformationApp:
         spill_query_window.title("Run Spill Query")
         spill_query_window.configure(bg='light blue')
     
-        tk.Label(spill_query_window, text="Enter Spill Level:", bg='light blue').pack(pady=5)
+        tk.Label(spill_query_window, text="Enter Spill Level:", bg='light blue').grid(row=0, column=0, pady=5, sticky='w')
         entry_spill_level = tk.Entry(spill_query_window)
-        entry_spill_level.pack(pady=5)
+        entry_spill_level.grid(row=0, column=1, pady=5, sticky='w')
         entry_spill_level.insert(0, str(self.default_spill_level))  # Default value for spill level
     
-        tk.Label(spill_query_window, text="Select Start Date:", bg='light blue').pack(pady=5)
+        tk.Label(spill_query_window, text="Select Start Date:", bg='light blue').grid(row=1, column=0, pady=5, sticky='w')
         start_date_frame = tk.Frame(spill_query_window, bg='light blue')
-        start_date_frame.pack(pady=5)
+        start_date_frame.grid(row=1, column=1, pady=5, sticky='w')
         start_year = ttk.Combobox(start_date_frame, values=[str(year) for year in range(2000, 2030)])
-        start_year.pack(side="left")
+        start_year.grid(row=0, column=0)
         start_year.set("2024")  # Default start year
         start_month = ttk.Combobox(start_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
-        start_month.pack(side="left")
+        start_month.grid(row=0, column=1)
         start_month.set("01")  # Default start month
         start_day = ttk.Combobox(start_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
-        start_day.pack(side="left")
+        start_day.grid(row=0, column=2)
         start_day.set("01")  # Default start day
     
-        tk.Label(spill_query_window, text="Select End Date:", bg='light blue').pack(pady=5)
+        tk.Label(spill_query_window, text="Select End Date:", bg='light blue').grid(row=2, column=0, pady=5, sticky='w')
         end_date_frame = tk.Frame(spill_query_window, bg='light blue')
-        end_date_frame.pack(pady=5)
+        end_date_frame.grid(row=2, column=1, pady=5, sticky='w')
         end_year = ttk.Combobox(end_date_frame, values=[str(year) for year in range(2000, 2030)])
-        end_year.pack(side="left")
+        end_year.grid(row=0, column=0)
         end_year.set("2024")  # Default end year
         end_month = ttk.Combobox(end_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
-        end_month.pack(side="left")
+        end_month.grid(row=0, column=1)
         end_month.set("10")  # Default end month
         end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
-        end_day.pack(side="left")
+        end_day.grid(row=0, column=2)
         end_day.set("01")  # Default end day
     
         btn_run_query = tk.Button(spill_query_window, text="Run Query", command=lambda: self.run_spill_query(entry_spill_level.get(), start_year.get(), start_month.get(), start_day.get(), end_year.get(), end_month.get(), end_day.get()))
-        btn_run_query.pack(pady=5)
-
-
+        btn_run_query.grid(row=3, column=0, columnspan=2, pady=5)
 
     def run_spill_query(self, spill_level, start_year, start_month, start_day, end_year, end_month, end_day):
-        start_date_spill_query = f"{start_year}-{start_month}-{start_day}"
-        end_date_spill_query = f"{end_year}-{end_month}-{end_day}"
-        queries = processing_functions.read_queries('queries_v3.sql')
-        query7 = queries['query7']
-        DBAddr_sump = self.DB_Addr_sump_str.get()
-        SourceSystem_sump = self.Source_sump_var.get()
-        print(start_date_spill_query, end_date_spill_query, DBAddr_sump, SourceSystem_sump)
-    
-        query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
-        self.df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
-        df_spill_hours = self.df_spill_hours
-        if df_spill_hours is not None:
-           print("Head of df_spill_hours:")
-           print(df_spill_hours.head(5))
-           df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
-        # Implement the logic to run the spill query here
-        print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
+            start_date_spill_query = f"{start_year}-{start_month}-{start_day}"
+            end_date_spill_query = f"{end_year}-{end_month}-{end_day}"
+            queries = processing_functions.read_queries('queries_v3.sql')
+            query7 = queries['query7']
+            DBAddr_sump = self.DB_Addr_sump_str.get()
+            SourceSystem_sump = self.Source_sump_var.get()
+            print(start_date_spill_query, end_date_spill_query, DBAddr_sump, SourceSystem_sump)
         
+            query_formatted_get_spill_hours = query7.format(start_date_spill_query=start_date_spill_query, end_date_spill_query=end_date_spill_query, DBAddr_sump=DBAddr_sump, SourceSystem_sump=SourceSystem_sump, spill_level=spill_level)
+            self.df_spill_hours = processing_functions.execute_query_and_return_df(start_date_spill_query, end_date_spill_query,"sqlTelemetry", query_formatted_get_spill_hours)
+            df_spill_hours = self.df_spill_hours
+            if df_spill_hours is not None:
+               print("Head of df_spill_hours:")
+               print(df_spill_hours.head(5))
+               df_spill_hours.to_excel(f'../data/raw/site{self.site_id}_from_{start_date_spill_query}_to_{end_date_spill_query}_df_spill_hours.xlsx', index=False)
+            # Implement the logic to run the spill query here
+            print(f"Running spill query with level: {spill_level}, start date: {start_year}-{start_month}-{start_day}, end date: {end_year}-{end_month}-{end_day}")
+            
         
     def open_download_page(self):
         download_window = tk.Toplevel(self.root)
         download_window.title("Download Data")
         download_window.configure(bg='light blue')
-
-        tk.Label(download_window, text="Select Start Date:", bg='light blue').pack(pady=5)
+    
+        tk.Label(download_window, text="Select Start Date:", bg='light blue').grid(row=0, column=0, pady=5, sticky='w')
         start_date_frame = tk.Frame(download_window, bg='light blue')
-        start_date_frame.pack(pady=5)
+        start_date_frame.grid(row=0, column=1, pady=5, sticky='w')
         start_year = ttk.Combobox(start_date_frame, values=[str(year) for year in range(2000, 2030)])
-        start_year.pack(side="left")
+        start_year.grid(row=0, column=0)
         start_year.set("2024")  # Default start year
         start_month = ttk.Combobox(start_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
-        start_month.pack(side="left")
+        start_month.grid(row=0, column=1)
         start_month.set("01")  # Default start month
         start_day = ttk.Combobox(start_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
-        start_day.pack(side="left")
+        start_day.grid(row=0, column=2)
         start_day.set("01")  # Default start day
-
-        tk.Label(download_window, text="Select End Date:", bg='light blue').pack(pady=5)
+    
+        tk.Label(download_window, text="Select End Date:", bg='light blue').grid(row=1, column=0, pady=5, sticky='w')
         end_date_frame = tk.Frame(download_window, bg='light blue')
-        end_date_frame.pack(pady=5)
+        end_date_frame.grid(row=1, column=1, pady=5, sticky='w')
         end_year = ttk.Combobox(end_date_frame, values=[str(year) for year in range(2000, 2030)])
-        end_year.pack(side="left")
+        end_year.grid(row=0, column=0)
         end_year.set("2024")  # Default end year
         end_month = ttk.Combobox(end_date_frame, values=[f"{month:02d}" for month in range(1, 13)])
-        end_month.pack(side="left")
+        end_month.grid(row=0, column=1)
         end_month.set("10")  # Default end month
         end_day = ttk.Combobox(end_date_frame, values=[f"{day:02d}" for day in range(1, 32)])
-        end_day.pack(side="left")
+        end_day.grid(row=0, column=2)
         end_day.set("01")  # Default end day
-
-        tk.Label(download_window, text="Coordinates for Radar Rainfall Download:", bg='light blue').pack(pady=5)
+    
+        tk.Label(download_window, text="Coordinates for Radar Rainfall Download:", bg='light blue').grid(row=2, column=0, pady=5, sticky='w')
         coordinates_frame = tk.Frame(download_window, bg='light blue')
-        coordinates_frame.pack(pady=5)
+        coordinates_frame.grid(row=2, column=1, pady=5, sticky='w')
         entry_x = tk.Entry(coordinates_frame)
-        entry_x.pack(side="left")
+        entry_x.grid(row=0, column=0)
         entry_x.insert(0, str(self.rounded_x))  # Default value for X coordinate
         entry_y = tk.Entry(coordinates_frame)
-        entry_y.pack(side="left")
+        entry_y.grid(row=0, column=1)
         entry_y.insert(0, str(self.rounded_y))  # Default value for Y coordinate
-
-        tk.Label(download_window, text="DB_Addr Sump:", bg='light blue').pack(pady=5)
+    
+        tk.Label(download_window, text="DB_Addr Sump:", bg='light blue').grid(row=3, column=0, pady=5, sticky='w')
         entry_db_addr_sump = tk.Entry(download_window)
-        entry_db_addr_sump.pack(pady=5)
+        entry_db_addr_sump.grid(row=3, column=1, pady=5, sticky='w')
         entry_db_addr_sump.insert(0, self.DB_Addr_sump_str.get())  # Default value for DB_Addr Sump
-
-        tk.Label(download_window, text="DB_Addr Flow Meter:", bg='light blue').pack(pady=5)
+    
+        tk.Label(download_window, text="DB_Addr Flow Meter:", bg='light blue').grid(row=4, column=0, pady=5, sticky='w')
         entry_db_addr_flow_meter = tk.Entry(download_window)
-        entry_db_addr_flow_meter.pack(pady=5)
+        entry_db_addr_flow_meter.grid(row=4, column=1, pady=5, sticky='w')
         entry_db_addr_flow_meter.insert(0, self.DB_Addr_rising_main_flow_str.get())  # Default value for DB_Addr Flow Meter
-
+    
         btn_download = tk.Button(download_window, text="Download", command=lambda: self.download_data(
             start_year.get(), start_month.get(), start_day.get(),
             end_year.get(), end_month.get(), end_day.get(),
@@ -335,25 +346,14 @@ class SiteInformationApp:
             entry_db_addr_sump.get(), self.Source_sump_var.get(),
             entry_db_addr_flow_meter.get(), self.Source_rising_main_flow_str.get()
         ))
-        btn_download.pack(pady=5)
-
+        btn_download.grid(row=5, column=0, columnspan=2, pady=5)
+    
         # Add the refine button to the download window
         refine_button = tk.Button(download_window, text="Refine rainfall area selection", command=self.open_refine_window)
-        refine_button.pack(pady=5)
-        
+        refine_button.grid(row=6, column=0, columnspan=2, pady=5)
+            
 
-    def create_buttons(self):
-        self.refine_button = tk.Button(self.root, text="Refine rainfall area selection", command=self.open_refine_window)
-        self.refine_button.pack()
-    
-        self.download_button = tk.Button(self.root, text="Download Data", command=self.open_download_page)
-        self.download_button.pack()
-    
-    def open_refine_window(self):
-        self.inner_instance = MapWindow(self.root, self)
-        
-        
-        
+
     def download_data(self, start_year, start_month, start_day, end_year, end_month, end_day, easting_value, northing_value, DBAddr_sump, SourceSystem_sump, DBAddr_flow_meter, sourcesystem_flow_meter):
         # Implement the logic to download the data
         start_date = f"{start_year}-{start_month}-{start_day}"
@@ -397,3 +397,21 @@ class SiteInformationApp:
         self.df_raw_flow_meter_global = df_raw_flow_meter
         self.start_date_global = start_date
         self.end_date_global = end_date
+
+    def create_buttons(self):
+        self.refine_button = tk.Button(self.root, text="Refine rainfall area selection", command=self.open_refine_window)
+        self.refine_button.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
+        
+        self.download_button = tk.Button(self.root, text="Download Data", command=self.open_download_page)
+        self.download_button.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        
+    def open_refine_window(self):
+        # Create a new Toplevel window for the map
+        self.map_window = tk.Toplevel(self.root)
+        self.map_window.title("Map Window")
+      
+        # Pass the newly created map_window to MapWindow constructor
+        self.inner_instance = MapWindow(self.map_window, self)
+                      
+      
+        
