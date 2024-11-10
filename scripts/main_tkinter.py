@@ -164,8 +164,6 @@ print(df_pivot.head(10))
 
 
 
-#%%
-
 #Not sure if this is needed? assuming the rainfall is in local time?
 # Convert the ReadingDate to datetime and localize to 'Europe/London'
 df_rainfall = df_pivot
