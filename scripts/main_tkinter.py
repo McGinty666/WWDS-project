@@ -199,10 +199,26 @@ df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter_filtered.drop(columns=[
 
 
 
-
-
-
 spill_level = 95
+
+#%%
+
+import pandas as pd
+
+# Assuming your existing DataFrame is named df_rainfall_filtered
+
+# Fill missing values in 'Intensity(mm/hr)' with 0
+df_rainfall_filtered['Intensity(mm/hr)'] = df_rainfall_filtered['Intensity(mm/hr)'].fillna(0)
+
+# Resample to hourly frequency and sum the Intensity(mm/hr) values, then divide by 12
+df_rainfall_hour_agg = df_rainfall_filtered.resample('h').sum(numeric_only=True) / 12
+
+# Reset the index to make 'time_gmt_n' a column again
+df_rainfall_hour_agg.reset_index(inplace=True)
+
+# Display the resulting DataFrame
+print(df_rainfall_hour_agg)
+
 
 
 #%%
@@ -214,7 +230,7 @@ from Plotting_raw_data_class import PlotWindow
 if __name__ == "__main__":
     root = tk.Tk()
     'app = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump, spill_level)'
-    app = PlotWindow(root, "2024-10-01", "2024-10-20", df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall_filtered, df_hour_agg_flow_meter=df_hour_agg_flow_meter_filtered, spill_level=95, sump_ylim=100)
+    app = PlotWindow(root, "2024-10-01", "2024-10-20", df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall_hour_agg, df_hour_agg_flow_meter=df_hour_agg_flow_meter_filtered, spill_level=95, sump_ylim=100)
     root.mainloop()
 
 
@@ -222,58 +238,3 @@ if __name__ == "__main__":
 
 #%%
 
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.neural_network import MLPRegressor
-import matplotlib.pyplot as plt
-
-# Assuming df_rainfall and df_raw_flow_meter are already loaded as pandas dataframes
-
-# Merge the two dataframes on the datetime columns
-df = pd.merge(df_rainfall, df_raw_flow_meter, left_on='time_gmt_n', right_on='TimeGMT')
-
-# Sort the dataframe by datetime
-df = df.sort_values(by='time_gmt_n')
-
-# Split the data into training and testing sets (first half for training, second half for testing)
-train_size = len(df) // 2
-train_df = df.iloc[:train_size]
-test_df = df.iloc[train_size:]
-
-# Prepare the input and output variables
-X_train = train_df[['Intensity']].values
-y_train = train_df['EValue'].values
-X_test = test_df[['Intensity']].values
-y_test = test_df['EValue'].values
-
-# Scale the data
-scaler_X = MinMaxScaler()
-scaler_y = MinMaxScaler()
-
-X_train_scaled = scaler_X.fit_transform(X_train)
-y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1))
-X_test_scaled = scaler_X.transform(X_test)
-y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1))
-
-# Build the neural network model using sklearn's MLPRegressor
-model = MLPRegressor(hidden_layer_sizes=(64, 32), activation='relu', solver='adam', max_iter=500)
-
-# Train the model
-model.fit(X_train_scaled, y_train_scaled.ravel())
-
-# Predict on the test set
-y_pred_scaled = model.predict(X_test_scaled)
-y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1))
-
-# Plot the results
-plt.figure(figsize=(14, 7))
-plt.plot(df['time_gmt_n'], df['Intensity'], label='Intensity (mm/hr)', color='blue')
-plt.plot(test_df['time_gmt_n'], y_test, label='Actual EValue', color='green')
-plt.plot(test_df['time_gmt_n'], y_pred, label='Predicted EValue', color='red')
-plt.xlabel('Time')
-plt.ylabel('Values')
-plt.title('Intensity (mm/hr), Actual EValue and Predicted EValue')
-plt.legend()
-plt.show()
