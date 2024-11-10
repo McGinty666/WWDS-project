@@ -62,7 +62,7 @@ class PlotWindow:
         btn_optimize_rtk.pack(side=tk.LEFT)
 
 
-
+    
     def plot_data(self, initial=False):
         self.ax1.clear()
         self.ax2.clear()
@@ -75,7 +75,7 @@ class PlotWindow:
     
         # Plot rainfall
         if df_rain is not None and not df_rain.empty:
-            self.ax1.bar(df_rain["time_gmt_n"], df_rain["Intensity(mm/hr)"], color='blue', label='Rainfall', width=0.01, alpha=0.5)
+            self.ax1.bar(df_rain["time_gmt_n"], df_rain["Intensity(mm/hr)"], color='blue', label='Rainfall', width=0.12, alpha=0.5)
             self.ax1.set_ylabel('Rainfall intensity (mm/h)', color='blue')
             self.ax1.tick_params(axis='y', labelcolor='blue')
             self.ax1.set_ylim(2, 0)  # Inverted axis
@@ -100,44 +100,46 @@ class PlotWindow:
             self.ax3.axhline(y=self.spill_level, color='green', linestyle='--', label='Spill Level')
     
         # Plot synthetic flow if available
-        if hasattr(self, 'df_synthetic_flow') and not self.df_synthetic_flow.empty:
-            df_synthetic_filtered = self.df_synthetic_flow[(self.df_synthetic_flow["TimeGMT"] >= self.start_time) & (self.df_synthetic_flow["TimeGMT"] <= self.end_time)]
-            if not df_synthetic_filtered.empty:
-                print("Plotting synthetic flow")  # Debugging line to check if this block is executed
-                print(df_synthetic_filtered.head())  # Debugging line to check the content of the DataFrame
-                print(self.start_time, "to", self.end_time)  # Debugging line to check the time range being used for filtering
-                print(self.df_synthetic_flow.head())  # Debugging line to check the content of the original DataFrame before filtering
-                
-                # Plot synthetic flow in turquoise color
-                self.ax2.plot(df_synthetic_filtered["TimeGMT"], df_synthetic_filtered["SyntheticFlow"], color='turquoise', label='Synthetic Flow')
-                self.ax2.legend()
+        if hasattr(self, 'df_synthetic_flow_filtered') and not self.df_synthetic_flow_filtered.empty:
+            self.ax2.plot(self.df_synthetic_flow_filtered["TimeGMT"], self.df_synthetic_flow_filtered["SyntheticFlow"], color='turquoise', label='Synthetic Flow')
+            self.ax2.legend()
     
         self.ax3.set_xlabel('Time')
         self.fig.suptitle('Rainfall, Flow Meter, and Sump Level')
         self.fig.tight_layout()
         self.canvas.draw()
-    
 
+    
 
 
     def update_plot(self, pan_direction):
         pan_interval = pd.Timedelta(days=2)
-
+    
         if pan_direction == 'left':
             self.start_time -= pan_interval
             self.end_time -= pan_interval
         elif pan_direction == 'right':
             self.start_time += pan_interval
             self.end_time += pan_interval
-
+    
         # Re-filter data for the new time range
         self.df_sump_filtered = self.df_raw_sump[(self.df_raw_sump["TimeGMT"] >= self.start_time) & (self.df_raw_sump["TimeGMT"] <= self.end_time)]
         if self.df_rainfall is not None:
             self.df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= self.start_time) & (self.df_rainfall["time_gmt_n"] <= self.end_time)]
         if self.df_hour_agg_flow_meter is not None:
             self.df_flow_meter_filtered = self.df_hour_agg_flow_meter[(self.df_hour_agg_flow_meter["TimeGMT"] >= self.start_time) & (self.df_hour_agg_flow_meter["TimeGMT"] <= self.end_time)]
-
+    
+        # Re-filter synthetic flow data for the new time range if available
+        if hasattr(self, 'df_synthetic_flow'):
+            self.df_synthetic_flow_filtered = self.df_synthetic_flow[(self.df_synthetic_flow["TimeGMT"] >= self.start_time) & (self.df_synthetic_flow["TimeGMT"] <= self.end_time)]
+    
+        # Update the x-axis limits to allow panning beyond existing values
+        self.ax1.set_xlim(self.start_time, self.end_time)
+        self.ax2.set_xlim(self.start_time, self.end_time)
+        self.ax3.set_xlim(self.start_time, self.end_time)
+    
         self.plot_data()
+
 
     def zoom_in(self):
         delta = (self.end_time - self.start_time) / 10
@@ -170,7 +172,7 @@ class PlotWindow:
         
 
     
-    # Add these methods to the PlotWindow class
+
     def open_remove_dwf_window(self):
         self.remove_dwf_window = tk.Toplevel(self.root)
         self.remove_dwf_window.title("Remove DWF")
@@ -192,15 +194,17 @@ class PlotWindow:
         self.end_month.grid(row=1, column=2)
         self.end_day.grid(row=1, column=3)
     
-        self.start_year.current(0)
-        self.start_month.current(0)
-        self.start_day.current(0)
-        self.end_year.current(0)
-        self.end_month.current(0)
-        self.end_day.current(0)
+        # Set default dates
+        self.start_year.set("2024")
+        self.start_month.set("09")
+        self.start_day.set("17")
+        self.end_year.set("2024")
+        self.end_month.set("09")
+        self.end_day.set("19")
     
         btn_apply = tk.Button(self.remove_dwf_window, text="Apply", command=self.calculate_median_profile)
         btn_apply.grid(row=2, column=0, columnspan=4)
+
     
     def calculate_median_profile(self):
 
@@ -284,17 +288,18 @@ class PlotWindow:
         self.train_end_month.grid(row=1, column=2)
         self.train_end_day.grid(row=1, column=3)
         
-        self.train_start_year.current(0)
-        self.train_start_month.current(0)
-        self.train_start_day.current(0)
-        self.train_end_year.current(0)
-        self.train_end_month.current(0)
-        self.train_end_day.current(0)
+        # Set default dates
+        self.train_start_year.set("2024")
+        self.train_start_month.set("09")
+        self.train_start_day.set("01")
+        self.train_end_year.set("2024")
+        self.train_end_month.set("10")
+        self.train_end_day.set("01")
         
         btn_apply = tk.Button(self.optimize_rtk_window, text="Apply", command=self.fit_rtk_parameters)
         btn_apply.grid(row=2, column=0, columnspan=4)
-    
 
+    
     def fit_rtk_parameters(self):
         start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
         end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"
@@ -358,20 +363,26 @@ class PlotWindow:
             synthetic_flow = generate_synthetic_flow(rainfall, R, T, K)
             return mean_squared_error(actual_flow, synthetic_flow)
     
-        # Initial guess for RTK parameters
-        initial_params = [0.1, 0.1, 0.1]
+        # Initial guess for RTK parameters with larger T value (5)
+        initial_params = [3, 5.0, 0.1]
+    
+        # Constraints to ensure RTK parameters cannot be negative
+        bounds = [(0, None), (0, None), (0, None)]
     
         # Optimize the RTK parameters to fit the data
-        result = minimize(objective, initial_params, args=(rainfall_values, flow_values), method='BFGS')
+        result = minimize(objective, initial_params, args=(rainfall_values, flow_values), method='L-BFGS-B', bounds=bounds)
         R, T, K = result.x
     
-        # Generate synthetic flow using optimized RTK parameters
-        synthetic_flow = generate_synthetic_flow(rainfall_values, R, T, K)
+        # Generate synthetic flow using optimized RTK parameters for all values in df_rainfall
+        all_rainfall_values = self.df_rainfall["Intensity(mm/hr)"].values
+        all_time_index = self.df_rainfall["time_gmt_n"]
+        
+        synthetic_flow_all = generate_synthetic_flow(all_rainfall_values, R, T, K)
     
         # Store the synthetic flow in a DataFrame
         self.df_synthetic_flow = pd.DataFrame({
-            "TimeGMT": df_flow_filtered.index,
-            "SyntheticFlow": synthetic_flow
+            "TimeGMT": all_time_index,
+            "SyntheticFlow": synthetic_flow_all
         })
     
         # Update the plot with the synthetic flow
@@ -379,7 +390,8 @@ class PlotWindow:
     
         print(f"Optimized RTK Parameters: R = {R:.2f}, T = {T:.2f}, K = {K:.2f}")
     
-                    
+        
+                            
 
 if __name__ == "__main__":
     root = tk.Tk()
