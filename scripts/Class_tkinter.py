@@ -49,7 +49,6 @@ class SiteInformationApp:
         self.start_date_global = None
         self.end_date_global = None
         
-        self.create_buttons()
 
 
     def setup_ui(self):
@@ -58,14 +57,14 @@ class SiteInformationApp:
         self.entry_site_id.grid(row=0, column=1, pady=5, sticky='w')
 
         self.btn_get_signals = tk.Button(self.root, text="Get Signals", command=self.get_signals)
-        self.btn_get_signals.grid(row=1, column=0, columnspan=2, pady=5)
+        self.btn_get_signals.grid(row=0, column=2, columnspan=2, pady=5)
 
-        self.output_text_1 = scrolledtext.ScrolledText(self.root, width=80, height=10)
+        self.output_text_1 = scrolledtext.ScrolledText(self.root, width=40, height=10)
         self.output_text_1.grid(row=2, column=0, columnspan=2, pady=5)
         self.output_text_1.configure(bg="light blue")
 
         frame = tk.Frame(self.root, bg='light blue')
-        frame.grid(row=3, column=0, columnspan=2, pady=5)
+        frame.grid(row=3, column=0, columnspan=3, pady=5)
 
         self.tree = ttk.Treeview(frame)
         self.tree.grid(row=0, column=0)
@@ -319,7 +318,7 @@ class SiteInformationApp:
         end_day.grid(row=0, column=2)
         end_day.set("01")  # Default end day
     
-        tk.Label(download_window, text="Coordinates for Radar Rainfall Download:", bg='light blue').grid(row=2, column=0, pady=5, sticky='w')
+        tk.Label(download_window, text="Defaul rounded coordinates for Radar Rainfall Download:", bg='light blue').grid(row=2, column=0, pady=5, sticky='w')
         coordinates_frame = tk.Frame(download_window, bg='light blue')
         coordinates_frame.grid(row=2, column=1, pady=5, sticky='w')
         entry_x = tk.Entry(coordinates_frame)
@@ -337,7 +336,8 @@ class SiteInformationApp:
         tk.Label(download_window, text="DB_Addr Flow Meter:", bg='light blue').grid(row=4, column=0, pady=5, sticky='w')
         entry_db_addr_flow_meter = tk.Entry(download_window)
         entry_db_addr_flow_meter.grid(row=4, column=1, pady=5, sticky='w')
-        entry_db_addr_flow_meter.insert(0, self.DB_Addr_rising_main_flow_str.get())  # Default value for DB_Addr Flow Meter
+        entry_db_addr_flow_meter.insert(0, self.DB_Addr_rising_main_flow_str.get())  # Default value for DB_Addr Flow Mete
+    
     
         btn_download = tk.Button(download_window, text="Download", command=lambda: self.download_data(
             start_year.get(), start_month.get(), start_day.get(),
@@ -400,12 +400,7 @@ class SiteInformationApp:
         self.start_date_global = start_date
         self.end_date_global = end_date
 
-    def create_buttons(self):
-        self.refine_button = tk.Button(self.root, text="Refine rainfall area selection", command=self.open_refine_window)
-        self.refine_button.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
-        
-        self.download_button = tk.Button(self.root, text="Download Data", command=self.open_download_page)
-        self.download_button.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+
         
     def open_refine_window(self):
         # Create a new Toplevel window for the map

@@ -47,11 +47,11 @@ class MapWindow:
 
         # Canvas for map display
         self.canvas = tk.Canvas(main_frame, width=500, height=500, bg="white")
-        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.canvas.grid(row=3, column=3, sticky="nsew")
 
         # Create a frame for the coordinates display
         self.coord_frame = tk.Frame(self.root)
-        self.coord_frame.grid(row=1, column=4, rowspan=3)
+        self.coord_frame.grid(row=2, column=4, rowspan=2)
 
         # Draw initial box and points
         self.draw_box()
@@ -68,7 +68,7 @@ class MapWindow:
     
         # Create the "Set Rainfall Extents" button
         set_extents_button = tk.Button(main_frame, text="Set Rainfall Extents", command=self.set_rainfall_extents)
-        set_extents_button.grid(row=1, column=0, padx=10, pady=10)
+        set_extents_button.grid(row=6, column=6, padx=10, pady=10)
         
     
     def draw_box(self):
