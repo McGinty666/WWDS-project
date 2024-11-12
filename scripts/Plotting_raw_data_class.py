@@ -305,54 +305,6 @@ class PlotWindow:
         btn_apply.grid(row=2, column=0, columnspan=4)
 
 
-'''
-    def fit_rtk_parameters(self):
-        start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
-        end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"
-        start_date = pd.to_datetime(start_date)
-        end_date = pd.to_datetime(end_date)
-    
-        df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= start_date) & (self.df_rainfall["time_gmt_n"] <= end_date)]
-        df_flow_filtered = self.df_hour_agg_flow_meter_adjusted[(self.df_hour_agg_flow_meter_adjusted["TimeGMT"] >= start_date) & (self.df_hour_agg_flow_meter_adjusted["TimeGMT"] <= end_date)]
-    
-        # Ensure the dataframes are aligned by time
-        df_rainfall_filtered.set_index("time_gmt_n", inplace=True)
-        df_flow_filtered.set_index("TimeGMT", inplace=True)
-    
-        # Reindex to the same time index, filling missing values in rainfall with 0
-        common_index = df_flow_filtered.index.union(df_rainfall_filtered.index)
-        
-        # Ensure that common_index is not empty before proceeding
-        if common_index.empty:
-            print("No common time points available for the selected period.")
-            return
-        
-        df_rainfall_filtered = df_rainfall_filtered.reindex(common_index, fill_value=0)
-        df_flow_filtered = df_flow_filtered.reindex(common_index)
-    
-        # Fill any remaining NaN values in flow with the mean of the column
-        df_flow_filtered["AdjustedEValue"] = df_flow_filtered["AdjustedEValue"].fillna(df_flow_filtered["AdjustedEValue"].mean())
-    
-        # Ensure that the reindexed dataframes do not contain NaN values before proceeding
-        if df_flow_filtered["AdjustedEValue"].isna().any() or df_rainfall_filtered["Intensity(mm/hr)"].isna().any():
-            print("Reindexed data contains NaN values.")
-            return
-    
-        self.rainfall_values = df_rainfall_filtered["Intensity(mm/hr)"].values
-        self.flow_values = df_flow_filtered["AdjustedEValue"].values
-    
-        # Ensure that flow_values and rainfall_values are not empty before proceeding
-        if len(self.flow_values) == 0 or len(self.rainfall_values) == 0:
-            print("No flow or rainfall data available for the selected period.")
-            return
-    
-        # Ensure that flow_values and rainfall_values do not contain NaN or infinite values before proceeding
-        if np.isnan(self.flow_values).any() or np.isnan(self.rainfall_values).any() or np.isinf(self.flow_values).any() or np.isinf(self.rainfall_values).any():
-            print("Flow or rainfall data contains NaN or infinite values.")
-            return
-    
-        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
-'''
     def fit_rtk_parameters(self):
         start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
         end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"

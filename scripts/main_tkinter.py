@@ -130,6 +130,7 @@ df_hour_agg_flow_meter_raw = loaded_dataframes["df_hour_agg_flow_meter"]
 df_sump_filtered = df_raw_sump
 df_sump_filtered = df_sump_filtered.sort_values(by="TimeGMT")
 df_rainfall= processing_functions.process_rainfall_data(df_rainfall_raw)
+
 df_hour_agg_flow_meter = processing_functions.transform_flow_meter_data(df_hour_agg_flow_meter_raw)
 
 
@@ -140,8 +141,8 @@ from Plotting_raw_data_class import PlotWindow
 #%%
 if __name__ == "__main__":
     root = tk.Tk()
-    start_date_plot = '01-10-2024'
-    end_date_plot = '10-10-2024'
+    start_date_plot = '01-09-2024'
+    end_date_plot = '10-11-2024'
     app = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall, df_hour_agg_flow_meter=df_hour_agg_flow_meter, spill_level=95, sump_ylim=100)
     root.mainloop()
 
