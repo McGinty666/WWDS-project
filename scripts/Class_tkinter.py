@@ -45,7 +45,7 @@ class SiteInformationApp:
         self.df_rainfall_global = None
         self.df_raw_sump_global = None
         self.df_hour_agg_flow_meter_global = None
-        self.df_raw_flow_meter_global = None
+        #self.df_raw_flow_meter_global = None
         self.start_date_global = None
         self.end_date_global = None
         
@@ -377,7 +377,7 @@ class SiteInformationApp:
         df_rainfall = processing_functions.execute_query_and_return_df(start_date, end_date,"DALMeteorology", query_formatted_rainfall)
         df_raw_sump = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_sump)
         df_hour_agg_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_hour_agg_flow_meter)
-        df_raw_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_flow_meter)
+        #df_raw_flow_meter = processing_functions.execute_query_and_return_df(start_date, end_date,"sqlTelemetry", query_formatted_raw_flow_meter)
         messagebox.showinfo("Download", "Data download complete.")
         # Print the head(5) of each DataFrame and save to Excel
         if df_rainfall is not None:
@@ -389,14 +389,14 @@ class SiteInformationApp:
         if df_hour_agg_flow_meter is not None:
             print("Head of df_hour_agg_flow_meter:")
             print(df_hour_agg_flow_meter.head(5))      
-        if df_raw_flow_meter is not None:
-            print("Head of df_raw_flow_meter:")
-            print(df_raw_flow_meter.head(5))
+        #if df_raw_flow_meter is not None:
+           # print("Head of df_raw_flow_meter:")
+            #print(df_raw_flow_meter.head(5))
         #self.df_spill_hours_global = df_spill_hours
         self.df_rainfall_global = df_rainfall
         self.df_raw_sump_global = df_raw_sump
         self.df_hour_agg_flow_meter_global = df_hour_agg_flow_meter
-        self.df_raw_flow_meter_global = df_raw_flow_meter
+        #self.df_raw_flow_meter_global = df_raw_flow_meter
         self.start_date_global = start_date
         self.end_date_global = end_date
 

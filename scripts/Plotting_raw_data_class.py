@@ -26,6 +26,9 @@ class PlotWindow:
         self.df_sump_filtered = df_raw_sump[(df_raw_sump["TimeGMT"] >= self.start_time) & (df_raw_sump["TimeGMT"] <= self.end_time)]
         self.df_rainfall_filtered = df_rainfall[(df_rainfall["time_gmt_n"] >= self.start_time) & (df_rainfall["time_gmt_n"] <= self.end_time)] if df_rainfall is not None else None
         self.df_flow_meter_filtered = df_hour_agg_flow_meter[(df_hour_agg_flow_meter["TimeGMT"] >= self.start_time) & (df_hour_agg_flow_meter["TimeGMT"] <= self.end_time)] if df_hour_agg_flow_meter is not None else None
+        
+        self.rainfall_values = df_rainfall
+
 
         self.spill_level = spill_level
         self.sump_ylim = sump_ylim
@@ -291,6 +294,53 @@ class PlotWindow:
         btn_apply = tk.Button(self.optimize_rtk_window, text="Apply", command=self.fit_rtk_parameters)
         btn_apply.grid(row=2, column=0, columnspan=4)
     
+    def fit_rtk_parameters(self):
+        start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
+        end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+    
+        df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= start_date) & (self.df_rainfall["time_gmt_n"] <= end_date)]
+        df_flow_filtered = self.df_hour_agg_flow_meter_adjusted[(self.df_hour_agg_flow_meter_adjusted["TimeGMT"] >= start_date) & (self.df_hour_agg_flow_meter_adjusted["TimeGMT"] <= end_date)]
+    
+        # Ensure the dataframes are aligned by time
+        df_rainfall_filtered.set_index("time_gmt_n", inplace=True)
+        df_flow_filtered.set_index("TimeGMT", inplace=True)
+    
+        # Reindex to the same time index, filling missing values in rainfall with 0
+        common_index = df_flow_filtered.index.union(df_rainfall_filtered.index)
+        
+        # Ensure that common_index is not empty before proceeding
+        if common_index.empty:
+            print("No common time points available for the selected period.")
+            return
+        
+        df_rainfall_filtered = df_rainfall_filtered.reindex(common_index, fill_value=0)
+        df_flow_filtered = df_flow_filtered.reindex(common_index)
+    
+        # Fill any remaining NaN values in flow with the mean of the column
+        df_flow_filtered["AdjustedEValue"] = df_flow_filtered["AdjustedEValue"].fillna(df_flow_filtered["AdjustedEValue"].mean())
+    
+        # Ensure that the reindexed dataframes do not contain NaN values before proceeding
+        if df_flow_filtered["AdjustedEValue"].isna().any() or df_rainfall_filtered["Intensity(mm/hr)"].isna().any():
+            print("Reindexed data contains NaN values.")
+            return
+    
+        self.rainfall_values = df_rainfall_filtered["Intensity(mm/hr)"].values
+        self.flow_values = df_flow_filtered["AdjustedEValue"].values
+    
+        # Ensure that flow_values and rainfall_values are not empty before proceeding
+        if len(self.flow_values) == 0 or len(self.rainfall_values) == 0:
+            print("No flow or rainfall data available for the selected period.")
+            return
+    
+        # Ensure that flow_values and rainfall_values do not contain NaN or infinite values before proceeding
+        if np.isnan(self.flow_values).any() or np.isnan(self.rainfall_values).any() or np.isinf(self.flow_values).any() or np.isinf(self.rainfall_values).any():
+            print("Flow or rainfall data contains NaN or infinite values.")
+            return
+    
+        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
+
 
     def fit_rtk_parameters(self):
         start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
@@ -324,58 +374,62 @@ class PlotWindow:
             print("Reindexed data contains NaN values.")
             return
     
-        rainfall_values = df_rainfall_filtered["Intensity(mm/hr)"].values
-        flow_values = df_flow_filtered["AdjustedEValue"].values
+        self.rainfall_values = df_rainfall_filtered["Intensity(mm/hr)"].values
+        self.flow_values = df_flow_filtered["AdjustedEValue"].values
     
         # Ensure that flow_values and rainfall_values are not empty before proceeding
-        if len(flow_values) == 0 or len(rainfall_values) == 0:
+        if len(self.flow_values) == 0 or len(self.rainfall_values) == 0:
             print("No flow or rainfall data available for the selected period.")
             return
     
         # Ensure that flow_values and rainfall_values do not contain NaN or infinite values before proceeding
-        if np.isnan(flow_values).any() or np.isnan(rainfall_values).any() or np.isinf(flow_values).any() or np.isinf(rainfall_values).any():
+        if np.isnan(self.flow_values).any() or np.isnan(self.rainfall_values).any() or np.isinf(self.flow_values).any() or np.isinf(self.rainfall_values).any():
             print("Flow or rainfall data contains NaN or infinite values.")
             return
+    
+        
 
-    # Define synthetic flow generation function based on RTK parameters
-    def generate_synthetic_flow(rainfall, R, T, K):
-        synthetic_flow = np.zeros(len(rainfall))
-        for i in range(1, len(rainfall)):
-            synthetic_flow[i] = R * rainfall[i-1] + (1 - K) * synthetic_flow[i-1] + T
-            # Prevent overflow by capping the synthetic flow values
-            if synthetic_flow[i] > 1e6:
-                synthetic_flow[i] = 1e6
-            elif synthetic_flow[i] < -1e6:
-                synthetic_flow[i] = -1e6
-        return synthetic_flow
+        # Define synthetic flow generation function based on RTK parameters
+        def generate_synthetic_flow(rainfall, R, T, K):
+            synthetic_flow = np.zeros(len(rainfall))
+            for i in range(1, len(rainfall)):
+                synthetic_flow[i] = R * rainfall[i-1] + (1 - K) * synthetic_flow[i-1] + T
+                # Prevent overflow by capping the synthetic flow values
+                if synthetic_flow[i] > 1e6:
+                    synthetic_flow[i] = 1e6
+                elif synthetic_flow[i] < -1e6:
+                    synthetic_flow[i] = -1e6
+            return synthetic_flow
+    
+        # Define the objective function for optimization with higher weighting for higher flow values
+        def weighted_objective(params, rainfall, actual_flow):
+            R, T, K = params
+            synthetic_flow = generate_synthetic_flow(rainfall, R, T, K)
+            weights = actual_flow / np.max(actual_flow)  # Higher weights for higher flow values
+            return mean_squared_error(actual_flow, synthetic_flow, sample_weight=weights)
 
-    # Define the objective function for optimization with higher weighting for higher flow values
-    def weighted_objective(params, rainfall, actual_flow):
-        R, T, K = params
-        synthetic_flow = generate_synthetic_flow(rainfall, R, T, K)
-        weights = actual_flow / np.max(actual_flow)  # Higher weights for higher flow values
-        return mean_squared_error(actual_flow, synthetic_flow, sample_weight=weights)
 
-    # Initial guess for RTK parameters
-    initial_params = [0.1, 0.1, 0.1]
 
-    # Optimize the RTK parameters to fit the data
-    result = minimize(weighted_objective, initial_params, args=(rainfall_values, flow_values), method='BFGS')
-    R, T, K = result.x
-
-    # Generate synthetic flow using optimized RTK parameters
-    synthetic_flow = generate_synthetic_flow(rainfall_values, R, T, K)
-
-    # Store the synthetic flow in a DataFrame
-    self.df_synthetic_flow = pd.DataFrame({
-        "TimeGMT": df_flow_filtered.index,
-        "SyntheticFlow": synthetic_flow
-    })
-
-    # Update the plot with the synthetic flow
-    self.plot_data()
-
-    print(f"Optimized RTK Parameters: R = {R:.2f}, T = {T:.2f}, K = {K:.2f}")    
+        # Initial guess for RTK parameters
+        initial_params = [0.1, 0.1, 0.1]
+    
+        # Optimize the RTK parameters to fit the data
+        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
+        R, T, K = result.x
+    
+        # Generate synthetic flow using optimized RTK parameters
+        synthetic_flow = generate_synthetic_flow(self.rainfall_values, R, T, K)
+    
+        # Store the synthetic flow in a DataFrame
+        self.df_synthetic_flow = pd.DataFrame({
+            "TimeGMT": df_flow_filtered.index,
+            "SyntheticFlow": synthetic_flow
+        })
+    
+        # Update the plot with the synthetic flow
+        self.plot_data()
+    
+        print(f"Optimized RTK Parameters: R = {R:.2f}, T = {T:.2f}, K = {K:.2f}")    
 
 
 if __name__ == "__main__":
