@@ -13,57 +13,62 @@ class PlotWindow:
     def __init__(self, root, start_time, end_time, df_raw_sump, df_rainfall=None, df_hour_agg_flow_meter=None, spill_level=None, sump_ylim=None):
         self.root = root
         self.root.title("Rainfall and Flow Meter Plot")
-
+    
         self.start_time = pd.to_datetime(start_time)
         self.end_time = pd.to_datetime(end_time)
-
+    
         # Assign dataframes to instance variables
         self.df_raw_sump = df_raw_sump
         self.df_rainfall = df_rainfall
         self.df_hour_agg_flow_meter = df_hour_agg_flow_meter
-
+    
         # Pre-filter data for efficiency
         self.df_sump_filtered = df_raw_sump[(df_raw_sump["TimeGMT"] >= self.start_time) & (df_raw_sump["TimeGMT"] <= self.end_time)]
         self.df_rainfall_filtered = df_rainfall[(df_rainfall["time_gmt_n"] >= self.start_time) & (df_rainfall["time_gmt_n"] <= self.end_time)] if df_rainfall is not None else None
         self.df_flow_meter_filtered = df_hour_agg_flow_meter[(df_hour_agg_flow_meter["TimeGMT"] >= self.start_time) & (df_hour_agg_flow_meter["TimeGMT"] <= self.end_time)] if df_hour_agg_flow_meter is not None else None
-        
+    
         self.rainfall_values = df_rainfall
-
-
+    
         self.spill_level = spill_level
         self.sump_ylim = sump_ylim
-
+    
         self.fig = Figure(figsize=(12, 8))
         self.ax1, self.ax2, self.ax3 = self.fig.subplots(3, 1, sharex=True)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
+    
         self.plot_data(initial=True)  # Initial plot with pre-filtered data
-
+    
         # Control frame and buttons
         control_frame = tk.Frame(self.root)
         control_frame.pack(side=tk.BOTTOM)
-
+    
         btn_pan_left = tk.Button(control_frame, text="Pan Left", command=lambda: self.update_plot('left'))
         btn_pan_left.pack(side=tk.LEFT)
-
+    
         btn_pan_right = tk.Button(control_frame, text="Pan Right", command=lambda: self.update_plot('right'))
         btn_pan_right.pack(side=tk.LEFT)
-
+    
         btn_zoom_in = tk.Button(control_frame, text="Zoom In", command=self.zoom_in)
         btn_zoom_in.pack(side=tk.LEFT)
-
+    
         btn_zoom_out = tk.Button(control_frame, text="Zoom Out", command=self.zoom_out)
         btn_zoom_out.pack(side=tk.LEFT)
-        
+    
         # Add this in the __init__ method of PlotWindow class
         btn_remove_dwf = tk.Button(control_frame, text="Remove DWF", command=self.open_remove_dwf_window)
         btn_remove_dwf.pack(side=tk.LEFT)
-        
-        
+    
         btn_optimize_rtk = tk.Button(control_frame, text="Optimize RTK", command=self.open_optimize_rtk_window)
         btn_optimize_rtk.pack(side=tk.LEFT)
-
+    
+        # Add a text box for pan speed
+        self.pan_speed_var = tk.StringVar(value="2")  # Default pan speed is 2 days
+        lbl_pan_speed = tk.Label(control_frame, text="Pan Speed (days):")
+        lbl_pan_speed.pack(side=tk.LEFT)
+        txt_pan_speed = tk.Entry(control_frame, textvariable=self.pan_speed_var, width=5)
+        txt_pan_speed.pack(side=tk.LEFT)
+    
 
 
     def plot_data(self, initial=False):
@@ -111,8 +116,8 @@ class PlotWindow:
                 print(self.start_time, "to", self.end_time)  # Debugging line to check the time range being used for filtering
                 print(self.df_synthetic_flow.head())  # Debugging line to check the content of the original DataFrame before filtering
                 
-                # Plot synthetic flow in turquoise color
-                self.ax2.plot(df_synthetic_filtered["TimeGMT"], df_synthetic_filtered["SyntheticFlow"], color='turquoise', label='Synthetic Flow')
+                # Plot synthetic flow in black
+                self.ax2.plot(df_synthetic_filtered["TimeGMT"], df_synthetic_filtered["SyntheticFlow"], color='black', label='Synthetic Flow')
                 self.ax2.legend()
     
         self.ax3.set_xlabel('Time')
@@ -124,22 +129,27 @@ class PlotWindow:
 
 
     def update_plot(self, pan_direction):
-        pan_interval = pd.Timedelta(days=2)
-
+        try:
+            pan_interval_days = int(self.pan_speed_var.get())
+        except ValueError:
+            pan_interval_days = 2  # Default to 2 days if input is invalid
+    
+        pan_interval = pd.Timedelta(days=pan_interval_days)
+    
         if pan_direction == 'left':
             self.start_time -= pan_interval
             self.end_time -= pan_interval
         elif pan_direction == 'right':
             self.start_time += pan_interval
             self.end_time += pan_interval
-
+    
         # Re-filter data for the new time range
         self.df_sump_filtered = self.df_raw_sump[(self.df_raw_sump["TimeGMT"] >= self.start_time) & (self.df_raw_sump["TimeGMT"] <= self.end_time)]
         if self.df_rainfall is not None:
             self.df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= self.start_time) & (self.df_rainfall["time_gmt_n"] <= self.end_time)]
         if self.df_hour_agg_flow_meter is not None:
             self.df_flow_meter_filtered = self.df_hour_agg_flow_meter[(self.df_hour_agg_flow_meter["TimeGMT"] >= self.start_time) & (self.df_hour_agg_flow_meter["TimeGMT"] <= self.end_time)]
-
+    
         self.plot_data()
 
     def zoom_in(self):
@@ -293,7 +303,9 @@ class PlotWindow:
         
         btn_apply = tk.Button(self.optimize_rtk_window, text="Apply", command=self.fit_rtk_parameters)
         btn_apply.grid(row=2, column=0, columnspan=4)
-    
+
+
+'''
     def fit_rtk_parameters(self):
         start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
         end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"
@@ -340,8 +352,7 @@ class PlotWindow:
             return
     
         result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
-
-
+'''
     def fit_rtk_parameters(self):
         start_date = f"{self.train_start_year.get()}-{self.train_start_month.get()}-{self.train_start_day.get()}"
         end_date = f"{self.train_end_year.get()}-{self.train_end_month.get()}-{self.train_end_day.get()}"
