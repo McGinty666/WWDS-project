@@ -402,7 +402,8 @@ def process_rainfall_data(df_rainfall_loaded):
     df_rainfall = df_rainfall.sort_values(by="timestamp")
 
     # Localize the 'timestamp' column to 'Europe/London'
-    df_rainfall['timestamp'] = df_rainfall['timestamp'].dt.tz_localize('Europe/London')
+    df_rainfall['timestamp'] = df_rainfall['timestamp'].dt.tz_localize('Europe/London', ambiguous=True)
+
 
     # Convert the 'timestamp' column to UTC
     df_rainfall['time_gmt'] = df_rainfall['timestamp'].dt.tz_convert('UTC')

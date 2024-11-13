@@ -10,7 +10,7 @@ import numpy as np
 
 
 class PlotWindow:
-    def __init__(self, root, start_time, end_time, df_raw_sump, df_rainfall=None, df_hour_agg_flow_meter=None, spill_level=None, sump_ylim=None):
+    def __init__(self, root, start_time, end_time, df_raw_sump, df_rainfall=None, df_hour_agg_flow_meter=None, spill_level=None, sump_ylim=None, flow_ylim=None):
         self.root = root
         self.root.title("Rainfall and Flow Meter Plot")
     
@@ -31,6 +31,7 @@ class PlotWindow:
     
         self.spill_level = spill_level
         self.sump_ylim = sump_ylim
+        self.flow_ylim =flow_ylim
     
         self.fig = Figure(figsize=(12, 8))
         self.ax1, self.ax2, self.ax3 = self.fig.subplots(3, 1, sharex=True)
@@ -93,7 +94,7 @@ class PlotWindow:
             self.ax2.plot(df_flow["TimeGMT"], df_flow["meanEValue"], color='red', label='Mean EValue')
             self.ax2.set_ylabel('Mean EValue flow meter', color='red')
             self.ax2.tick_params(axis='y', labelcolor='red')
-            self.ax2.set_ylim(0, 100)
+            self.ax2.set_ylim(0, self.flow_ylim)
             self.plot_adjusted_flow_meter()  # Add this line
     
         # Plot sump level
@@ -355,14 +356,16 @@ class PlotWindow:
         # Define synthetic flow generation function based on RTK parameters
         def generate_synthetic_flow(rainfall, R, T, K):
             synthetic_flow = np.zeros(len(rainfall))
-            for i in range(1, len(rainfall)):
-                synthetic_flow[i] = R * rainfall[i-1] + (1 - K) * synthetic_flow[i-1] + T
-                # Prevent overflow by capping the synthetic flow values
-                if synthetic_flow[i] > 1e6:
-                    synthetic_flow[i] = 1e6
-                elif synthetic_flow[i] < -1e6:
-                    synthetic_flow[i] = -1e6
+            for i in range(len(rainfall)):
+                for j in range(i):
+                    if 0 <= i - j < T:
+                        # Rising limb
+                        synthetic_flow[i] += R * rainfall[j] * (i - j) / T
+                    elif T <= i - j < T * (K + 1):
+                        # Falling limb
+                        synthetic_flow[i] += R * rainfall[j] * (T * (K + 1) - (i - j)) / (T * K)
             return synthetic_flow
+
     
         # Define the objective function for optimization with higher weighting for higher flow values
         def weighted_objective(params, rainfall, actual_flow):
@@ -374,7 +377,7 @@ class PlotWindow:
 
 
         # Initial guess for RTK parameters
-        initial_params = [0.1, 0.1, 0.1]
+        initial_params = [1,1,1]
     
         # Optimize the RTK parameters to fit the data
         result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
