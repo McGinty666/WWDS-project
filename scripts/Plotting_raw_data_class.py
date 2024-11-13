@@ -78,6 +78,17 @@ class PlotWindow:
         txt_pan_speed = tk.Entry(control_frame, textvariable=self.pan_speed_var, width=5)
         txt_pan_speed.pack(side=tk.LEFT)
         
+         # Add a text box and button for skipping to a particular date
+        lbl_skip_date = tk.Label(control_frame, text="Skip to Date (YYYY-MM-DD):")
+        lbl_skip_date.pack(side=tk.LEFT)
+        
+        self.skip_date_var = tk.StringVar()
+        txt_skip_date = tk.Entry(control_frame, textvariable=self.skip_date_var, width=10)
+        txt_skip_date.pack(side=tk.LEFT)
+       
+        btn_skip_date = tk.Button(control_frame, text="Go", command=self.skip_to_date)
+        btn_skip_date.pack(side=tk.LEFT)
+     
 
 
 
@@ -129,7 +140,12 @@ class PlotWindow:
                 # Plot synthetic flow in black
                 self.ax2.plot(df_synthetic_filtered["TimeGMT"], df_synthetic_filtered["SyntheticFlow"], color='black', label='Synthetic Flow')
                 self.ax2.legend()
-    
+                
+            # Highlight the training period
+        if hasattr(self, 'training_start_time') and hasattr(self, 'training_end_time'):
+            self.ax2.axvspan(self.training_start_time, self.training_end_time, color='yellow', alpha=0.3, label='Training Period')
+            self.ax2.legend()
+        
         self.ax3.set_xlabel('Time')
         self.fig.suptitle('Rainfall, Flow Meter, and Sump Level')
         self.fig.tight_layout()
@@ -191,6 +207,24 @@ class PlotWindow:
 
         self.plot_data()
         
+    def skip_to_date(self):
+        try:
+            skip_date = pd.to_datetime(self.skip_date_var.get())
+            self.start_time = skip_date
+            self.end_time = skip_date + (self.end_time - self.start_time)
+
+            # Re-filter data based on the new time range
+            self.df_sump_filtered = self.df_raw_sump[(self.df_raw_sump["TimeGMT"] >= self.start_time) & (self.df_raw_sump["TimeGMT"] <= self.end_time)]
+            self.df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= self.start_time) & (self.df_rainfall["time_gmt_n"] <= self.end_time)] if self.df_rainfall is not None else None
+            self.df_flow_meter_filtered = self.df_hour_agg_flow_meter[(self.df_hour_agg_flow_meter["TimeGMT"] >= self.start_time) & (self.df_hour_agg_flow_meter["TimeGMT"] <= self.end_time)] if self.df_hour_agg_flow_meter is not None else None
+
+            # Update the plot with the new data
+            self.plot_data()
+        except ValueError:
+            print("Invalid date format. Please enter a date in YYYY-MM-DD format.")
+
+
+
 
     
     # Add these methods to the PlotWindow class
@@ -397,14 +431,19 @@ class PlotWindow:
             print("Optimization failed.")
             return
     
-        # Generate synthetic flow using optimized RTK parameters
-        synthetic_flow = generate_synthetic_flow(self.df_rainfall, self.R, self.T, self.K)
-    
+                # Generate synthetic flow using optimized RTK parameters over the entire range of df_rainfall
+        full_rainfall_values = self.df_rainfall["Intensity(mm/hr)"].values
+        full_synthetic_flow = generate_synthetic_flow(full_rainfall_values, self.R, self.T, self.K)
+        
         # Store the synthetic flow in a DataFrame
         self.df_synthetic_flow = pd.DataFrame({
-            "TimeGMT": df_flow_filtered.index,
-            "SyntheticFlow": synthetic_flow
+            "TimeGMT": self.df_rainfall["time_gmt_n"],
+            "SyntheticFlow": full_synthetic_flow
         })
+        
+                # Store the training period for plotting purposes
+        self.training_start_time = start_date
+        self.training_end_time = end_date
     
         # Update the plot with the synthetic flow
         self.plot_data()
