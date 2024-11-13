@@ -143,10 +143,13 @@ if __name__ == "__main__":
     root = tk.Tk()
     start_date_plot = '01-09-2024'
     end_date_plot = '10-11-2024'
-    app = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall, df_hour_agg_flow_meter=df_hour_agg_flow_meter, spill_level=1500, sump_ylim=100, flow_ylim=10)
+    app2 = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall, df_hour_agg_flow_meter=df_hour_agg_flow_meter, spill_level=1500, sump_ylim=100, flow_ylim=10)
     root.mainloop()
 
-
+    # Access RTK parameters and synthetic flow after the main loop ends
+    R, T, K, df_synthetic_flow = app2.get_rtk_parameters_and_synthetic_flow()
+    print(f"Retrieved RTK Parameters: R = {R}, T = {T}, K = {K}")
+    print(df_synthetic_flow.head())
 
 
 #%%

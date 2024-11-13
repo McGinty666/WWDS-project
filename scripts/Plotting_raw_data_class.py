@@ -37,6 +37,14 @@ class PlotWindow:
         self.ax1, self.ax2, self.ax3 = self.fig.subplots(3, 1, sharex=True)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        
+        # Initialize RTK parameters and synthetic flow
+        self.R = None
+        self.T = None
+        self.K = None
+        self.df_synthetic_flow = None
+            
     
         self.plot_data(initial=True)  # Initial plot with pre-filtered data
     
@@ -69,7 +77,8 @@ class PlotWindow:
         lbl_pan_speed.pack(side=tk.LEFT)
         txt_pan_speed = tk.Entry(control_frame, textvariable=self.pan_speed_var, width=5)
         txt_pan_speed.pack(side=tk.LEFT)
-    
+        
+
 
 
     def plot_data(self, initial=False):
@@ -109,7 +118,7 @@ class PlotWindow:
             self.ax3.axhline(y=self.spill_level, color='green', linestyle='--', label='Spill Level')
     
         # Plot synthetic flow if available
-        if hasattr(self, 'df_synthetic_flow') and not self.df_synthetic_flow.empty:
+        if self.df_synthetic_flow is not None and not self.df_synthetic_flow.empty:  # Updated check
             df_synthetic_filtered = self.df_synthetic_flow[(self.df_synthetic_flow["TimeGMT"] >= self.start_time) & (self.df_synthetic_flow["TimeGMT"] <= self.end_time)]
             if not df_synthetic_filtered.empty:
                 print("Plotting synthetic flow")  # Debugging line to check if this block is executed
@@ -381,10 +390,15 @@ class PlotWindow:
     
         # Optimize the RTK parameters to fit the data
         result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
-        R, T, K = result.x
+        if result.success:
+            self.R, self.T, self.K = result.x  # Store optimized RTK parameters as instance variables
+            print(f"Optimized RTK Parameters: R = {self.R:.2f}, T = {self.T:.2f}, K = {self.K:.2f}")
+        else:
+            print("Optimization failed.")
+            return
     
         # Generate synthetic flow using optimized RTK parameters
-        synthetic_flow = generate_synthetic_flow(self.rainfall_values, R, T, K)
+        synthetic_flow = generate_synthetic_flow(self.df_rainfall, self.R, self.T, self.K)
     
         # Store the synthetic flow in a DataFrame
         self.df_synthetic_flow = pd.DataFrame({
@@ -395,8 +409,10 @@ class PlotWindow:
         # Update the plot with the synthetic flow
         self.plot_data()
     
-        print(f"Optimized RTK Parameters: R = {R:.2f}, T = {T:.2f}, K = {K:.2f}")    
+        print(f"Optimized RTK Parameters: R = {self.R:.2f}, T = {self.T:.2f}, K = {self.K:.2f}")  
 
+    def get_rtk_parameters_and_synthetic_flow(self):
+        return self.R, self.T, self.K, self.df_synthetic_flow
 
 if __name__ == "__main__":
     root = tk.Tk()
