@@ -394,8 +394,6 @@ class PlotWindow:
             print("Flow or rainfall data contains NaN or infinite values.")
             return
     
-        
-
         # Define synthetic flow generation function based on RTK parameters
         def generate_synthetic_flow(rainfall, R, T, K):
             synthetic_flow = np.zeros(len(rainfall))
@@ -408,7 +406,6 @@ class PlotWindow:
                         # Falling limb
                         synthetic_flow[i] += R * rainfall[j] * (T * (K + 1) - (i - j)) / (T * K)
             return synthetic_flow
-
     
         # Define the objective function for optimization with higher weighting for higher flow values
         def weighted_objective(params, rainfall, actual_flow):
@@ -416,14 +413,15 @@ class PlotWindow:
             synthetic_flow = generate_synthetic_flow(rainfall, R, T, K)
             weights = actual_flow / np.max(actual_flow)  # Higher weights for higher flow values
             return mean_squared_error(actual_flow, synthetic_flow, sample_weight=weights)
-
-
-
+    
         # Initial guess for RTK parameters
-        initial_params = [1,1,1]
+        initial_params = [1, 1, 1]
+        
+        # Set bounds for the parameters to ensure they are positive
+        bounds = [(0, None), (0, None), (0, None)]
     
         # Optimize the RTK parameters to fit the data
-        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
+        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='L-BFGS-B', bounds=bounds)
         if result.success:
             self.R, self.T, self.K = result.x  # Store optimized RTK parameters as instance variables
             print(f"Optimized RTK Parameters: R = {self.R:.2f}, T = {self.T:.2f}, K = {self.K:.2f}")
@@ -431,7 +429,7 @@ class PlotWindow:
             print("Optimization failed.")
             return
     
-                # Generate synthetic flow using optimized RTK parameters over the entire range of df_rainfall
+        # Generate synthetic flow using optimized RTK parameters over the entire range of df_rainfall
         full_rainfall_values = self.df_rainfall["Intensity(mm/hr)"].values
         full_synthetic_flow = generate_synthetic_flow(full_rainfall_values, self.R, self.T, self.K)
         
@@ -441,15 +439,16 @@ class PlotWindow:
             "SyntheticFlow": full_synthetic_flow
         })
         
-                # Store the training period for plotting purposes
+        # Store the training period for plotting purposes
         self.training_start_time = start_date
         self.training_end_time = end_date
     
         # Update the plot with the synthetic flow
         self.plot_data()
     
-        print(f"Optimized RTK Parameters: R = {self.R:.2f}, T = {self.T:.2f}, K = {self.K:.2f}")  
-
+        print(f"Optimized RTK Parameters: R = {self.R:.2f}, T = {self.T:.2f}, K = {self.K:.2f}")
+    
+    
     def get_rtk_parameters_and_synthetic_flow(self):
         return self.R, self.T, self.K, self.df_synthetic_flow
 

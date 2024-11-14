@@ -21,7 +21,8 @@ from PIL import Image, ImageTk
 from tkinter import messagebox
 import math
 import os
-from Class_tkinter import SiteInformationApp  # Assuming your class is in a file named site_information_app.py
+from Class_tkinter import SiteInformationApp  
+
 
 #%%
 if __name__ == "__main__":
