@@ -422,9 +422,12 @@ class PlotWindow:
     
         # Initial guess for RTK parameters
         initial_params = [1, 1, 1, 1, 2, 1]  # Ensure T2 > T1
+        
+        # Set bounds for the parameters to ensure they are positive
+        bounds = [(0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
     
         # Optimize the RTK parameters to fit the data
-        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='BFGS')
+        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='L-BFGS-B', bounds=bounds)
         
         # Check if optimization was successful
         if result.success:

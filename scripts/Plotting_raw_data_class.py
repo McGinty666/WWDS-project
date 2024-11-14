@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Oct  8 15:53:46 2024
+
+@author: RMCGINT
+"""
+
+
+
+
+
+
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg

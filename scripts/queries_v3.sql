@@ -167,6 +167,6 @@ SELECT
       CONCAT([Year], '-', [Month], '-', [Day], '-', [Hour]) AS [spill_hours] 
   FROM [dbo].[AnaloguesAggregatedHourlyView]
   WHERE [DBAddr] = '{DBAddr_sump}'
-    AND [50percentile] > {spill_level}
+    AND [95percentile] > '{spill_level}'
     AND CONCAT([Year], '-', [Month], '-', [Day]) IN (SELECT [spill_days] FROM SpillDays)	
 ORDER BY CONCAT([Year], '-', [Month], '-', [Day], '-', [Hour])
