@@ -137,7 +137,7 @@ df_hour_agg_flow_meter = processing_functions.transform_flow_meter_data(df_hour_
 #%%
 
 
-from Plotting_raw_data_class import PlotWindow
+from Plotting_raw_data_class_2parRTK import PlotWindow
 
 #%%
 
@@ -151,12 +151,20 @@ if __name__ == "__main__":
     end_date_plot = '10-11-2024'
     app2 = PlotWindow(root, start_date_plot, end_date_plot, df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall, df_hour_agg_flow_meter=df_hour_agg_flow_meter, spill_level=100, sump_ylim=100, flow_ylim=16)
     root.mainloop()
+    '''
 
+    # Access RTK parameters and synthetic flow after the main loop ends
+    R, T, K, df_synthetic_flow = app2.get_rtk_parameters_and_synthetic_flow()
+
+    print(df_synthetic_flow.head())
+    '''
+    
     # Access RTK parameters and synthetic flow after the main loop ends
     R1, T1, K1, R2, T2, K2, df_synthetic_flow = app2.get_rtk_parameters_and_synthetic_flow()
     print(f"Retrieved RTK Parameters Set 1: R1 = {R1}, T1 = {T1}, K1 = {K1}")
     print(f"Retrieved RTK Parameters Set 2: R2 = {R2}, T2 = {T2}, K2 = {K2}")
     print(df_synthetic_flow.head())
+
 
 #%%
 

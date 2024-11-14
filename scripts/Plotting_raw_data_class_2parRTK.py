@@ -358,7 +358,7 @@ class PlotWindow:
         end_date = pd.to_datetime(end_date)
     
         df_rainfall_filtered = self.df_rainfall[(self.df_rainfall["time_gmt_n"] >= start_date) & (self.df_rainfall["time_gmt_n"] <= end_date)]
-        df_flow_filtered = self.df_hour_agg_flow_meter[(self.df_hour_agg_flow_meter["TimeGMT"] >= start_date) & (self.df_hour_agg_flow_meter["TimeGMT"] <= end_date)]
+        df_flow_filtered = self.df_hour_agg_flow_meter_adjusted[(self.df_hour_agg_flow_meter_adjusted["TimeGMT"] >= start_date) & (self.df_hour_agg_flow_meter_adjusted["TimeGMT"] <= end_date)]
     
         # Ensure the dataframes are aligned by time
         df_rainfall_filtered.set_index("time_gmt_n", inplace=True)
@@ -376,11 +376,9 @@ class PlotWindow:
         df_flow_filtered = df_flow_filtered.reindex(common_index)
     
                 # Check if 'AdjustedEValue' column exists before attempting to fill NaN values
-        if 'AdjustedEValue' in df_flow_filtered.columns:
-            df_flow_filtered["AdjustedEValue"] = df_flow_filtered["AdjustedEValue"].fillna(df_flow_filtered["AdjustedEValue"].mean())
-        else:
-            print("Column 'AdjustedEValue' does not exist in the DataFrame.")
-            return
+
+        df_flow_filtered["AdjustedEValue"] = df_flow_filtered["AdjustedEValue"].fillna(df_flow_filtered["AdjustedEValue"].mean())
+
     
         # Ensure that the reindexed dataframes do not contain NaN values before proceeding
         if df_flow_filtered["AdjustedEValue"].isna().any() or df_rainfall_filtered["Intensity(mm/hr)"].isna().any():
@@ -460,7 +458,6 @@ class PlotWindow:
 
     def get_rtk_parameters_and_synthetic_flow(self):
         return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow
-
 
 if __name__ == "__main__":
     root = tk.Tk()
