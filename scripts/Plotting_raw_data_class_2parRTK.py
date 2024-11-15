@@ -75,7 +75,7 @@ class PlotWindow:
         btn_optimize_rtk.pack(side=tk.LEFT)
     
         # Add a text box for pan speed
-        self.pan_speed_var = tk.StringVar(value="2")  # Default pan speed is 2 days
+        self.pan_speed_var = tk.StringVar(value="7")  # Default pan speed is 2 days
         lbl_pan_speed = tk.Label(control_frame, text="Pan Speed (days):")
         lbl_pan_speed.pack(side=tk.LEFT)
         txt_pan_speed = tk.Entry(control_frame, textvariable=self.pan_speed_var, width=5)
@@ -110,7 +110,7 @@ class PlotWindow:
             self.ax1.bar(df_rain["time_gmt_n"], df_rain["Intensity(mm/hr)"], color='blue', label='Rainfall', width=0.12, alpha=0.5)
             self.ax1.set_ylabel('Rainfall intensity (mm/h)', color='blue')
             self.ax1.tick_params(axis='y', labelcolor='blue')
-            self.ax1.set_ylim(2, 0)  # Inverted axis
+            self.ax1.set_ylim(3, 0)  # Inverted axis
     
         # Plot flow meter data
         if df_flow is not None and not df_flow.empty:
@@ -161,7 +161,7 @@ class PlotWindow:
         try:
             pan_interval_days = int(self.pan_speed_var.get())
         except ValueError:
-            pan_interval_days = 2  # Default to 2 days if input is invalid
+            pan_interval_days = 7  # Default to 7 days if input is invalid
     
         pan_interval = pd.Timedelta(days=pan_interval_days)
     
@@ -340,12 +340,12 @@ class PlotWindow:
         self.train_end_day.grid(row=1, column=3)
         
         # Set default dates
-        self.train_start_year.set("2024")
-        self.train_start_month.set("09")
-        self.train_start_day.set("01")
-        self.train_end_year.set("2024")
-        self.train_end_month.set("10")
-        self.train_end_day.set("01")
+        self.train_start_year.set("2023")
+        self.train_start_month.set("07")
+        self.train_start_day.set("23")
+        self.train_end_year.set("2023")
+        self.train_end_month.set("08")
+        self.train_end_day.set("10")
         
         
         btn_apply = tk.Button(self.optimize_rtk_window, text="Apply", command=self.fit_rtk_parameters)

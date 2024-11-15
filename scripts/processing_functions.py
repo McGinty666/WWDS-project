@@ -72,7 +72,7 @@ def execute_query_and_return_df(start_date, end_date, connection_name, query):
                 df['TimeGMT'] = pd.to_datetime(df['TimeGMT'], utc=True).dt.tz_localize(None)
             return df
 
-
+'''
 def plot_rainfall_and_sump_level(start_time, end_time):
     # Convert start and end times to datetime
     start_time = pd.to_datetime(start_time)
@@ -188,7 +188,7 @@ def update_plot(pan_direction):
     display(pan_left_button, pan_right_button)
     # Plot the updated graph
     plot_rainfall_and_sump_level(start_time_plot, end_time_plot)
-
+'''
 #used in the early colab version using the analogues and adding a massk to say if the threshold was exceeded
 def count_exceedance_instances(df):
     count = 0
@@ -394,19 +394,15 @@ def process_rainfall_data(df_rainfall_loaded):
     # Calculate the median intensity, accepting NaN values
     df_pivot['Median_Intensity(mm/hr)'] = df_pivot.iloc[:, 1:].median(axis=1, skipna=True)
 
-    # Convert the ReadingDate to datetime and localize to 'Europe/London'
+    # Convert the ReadingDate to datetime and localize to UTC
     df_rainfall = df_pivot
     df_rainfall['Intensity(mm/hr)'] = df_rainfall['Median_Intensity(mm/hr)'] * 12
 
-    df_rainfall['timestamp'] = pd.to_datetime(df_rainfall['ReadingDate'], format='%Y%m%d%H%M')
+    df_rainfall['timestamp'] = pd.to_datetime(df_rainfall['ReadingDate'], format='%Y%m%d%H%M', utc=True)
     df_rainfall = df_rainfall.sort_values(by="timestamp")
 
-    # Localize the 'timestamp' column to 'Europe/London'
-    df_rainfall['timestamp'] = df_rainfall['timestamp'].dt.tz_localize('Europe/London', ambiguous=True)
-
-
-    # Convert the 'timestamp' column to UTC
-    df_rainfall['time_gmt'] = df_rainfall['timestamp'].dt.tz_convert('UTC')
+    # Convert the 'timestamp' column to UTC (already in UTC, so this is just to ensure consistency)
+    df_rainfall['time_gmt'] = df_rainfall['timestamp']
     df_rainfall['time_gmt_n'] = df_rainfall['time_gmt'].dt.tz_localize(None)
 
     df_rainfall_filtered = df_rainfall.sort_values(by="time_gmt_n")
@@ -501,13 +497,7 @@ for ax, (season, months) in zip(axs.flatten(), seasons.items()):
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
-'''
 
-
-
-#%%
-
-'''
 
 # Calculate total spill hours in each Month for each Year
 total_spill_hours_per_month_year = df_spill_hours.groupby(['Year', 'Month']).size().unstack(fill_value=0)
