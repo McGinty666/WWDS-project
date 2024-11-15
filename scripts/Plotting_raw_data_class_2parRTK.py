@@ -461,8 +461,9 @@ class PlotWindow:
 
     def get_rtk_parameters_and_synthetic_flow(self):
         return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow
-
+'''
 if __name__ == "__main__":
     root = tk.Tk()
     app = PlotWindow(root, "2024-10-01", "2024-10-20", df_raw_sump=df_sump_filtered, df_rainfall=df_rainfall_filtered, df_hour_agg_flow_meter=df_hour_agg_flow_meter_filtered, spill_level=95, sump_ylim=100)
     root.mainloop()
+'''
