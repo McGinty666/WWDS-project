@@ -417,7 +417,7 @@ def process_rainfall_data(df_rainfall_loaded):
     df_rainfall_filtered['Intensity(mm/hr)'] = df_rainfall_filtered['Intensity(mm/hr)'].fillna(0).infer_objects(copy=False)
 
     # Resample to hourly frequency and sum the Intensity(mm/hr) values, then divide by 12
-    df_rainfall_hour_agg = df_rainfall_filtered.resample('H').sum(numeric_only=True) / 12
+    df_rainfall_hour_agg = df_rainfall_filtered.resample('h').sum(numeric_only=True) / 12
 
     # Reset the index to make 'time_gmt_n' a column again
     df_rainfall_hour_agg.reset_index(inplace=True)
