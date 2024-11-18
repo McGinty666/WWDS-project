@@ -114,18 +114,18 @@ class PlotWindow:
     
         # Plot flow meter data
         if df_flow is not None and not df_flow.empty:
-            self.ax2.plot(df_flow["TimeGMT"], df_flow["meanEValue"], color='red', label='Mean EValue')
+            self.ax2.plot(df_flow["TimeGMT"], df_flow["flow_trend"], color='red', label='Mean EValue')
             self.ax2.set_ylabel('Mean EValue flow meter', color='red')
             self.ax2.tick_params(axis='y', labelcolor='red')
             self.ax2.set_ylim(0, self.flow_ylim)
             self.plot_adjusted_flow_meter()  # Add this line
 
         # Plot flow meter data
-        if df_flow is not None and not df_flow.empty:
-            self.ax2.plot(df_flow["TimeGMT"], df_flow["flow_trend"], color='red', label='flow_trend')
-            self.ax2.set_ylabel('Mean EValue flow meter', color='red')
-            self.ax2.tick_params(axis='y', labelcolor='red')
-            self.ax2.set_ylim(0, self.flow_ylim)
+        #if df_flow is not None and not df_flow.empty:
+            #self.ax2.plot(df_flow["TimeGMT"], df_flow["meanEValue"], color='green', label='flow_trend')
+            #self.ax2.set_ylabel('Mean EValue flow meter', color='green')
+            #self.ax2.tick_params(axis='y', labelcolor='green')
+            #self.ax2.set_ylim(0, self.flow_ylim)
             #self.plot_adjusted_flow_meter()  # Add this line
     
         # Plot sump level
@@ -304,7 +304,7 @@ class PlotWindow:
         if self.df_flow_meter_filtered is not None and not self.df_flow_meter_filtered.empty:
             df_copy = self.df_flow_meter_filtered.copy()
             df_copy['Hour'] = df_copy['TimeGMT'].dt.hour
-            df_copy['AdjustedEValue'] = df_copy.apply(lambda row: row['meanEValue'] - self.median_profile.get(row['Hour'], 0), axis=1)
+            df_copy['AdjustedEValue'] = df_copy.apply(lambda row: row['flow_trend'] - self.median_profile.get(row['Hour'], 0), axis=1)
             self.df_flow_meter_adjusted = df_copy
 
 
@@ -313,7 +313,7 @@ class PlotWindow:
         if self.df_hour_agg_flow_meter is not None and not self.df_hour_agg_flow_meter.empty:
             df_copy = self.df_hour_agg_flow_meter.copy()
             df_copy['Hour'] = df_copy['TimeGMT'].dt.hour
-            df_copy['AdjustedEValue'] = df_copy.apply(lambda row: row['meanEValue'] - self.median_profile.get(row['Hour'], 0), axis=1)
+            df_copy['AdjustedEValue'] = df_copy.apply(lambda row: row['flow_trend'] - self.median_profile.get(row['Hour'], 0), axis=1)
             self.df_hour_agg_flow_meter_adjusted = df_copy
     
     def plot_adjusted_flow_meter(self):
