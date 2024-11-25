@@ -8,7 +8,7 @@ import sqlalchemy
 import pyodbc
 import pandas as pd
 import re
-from DAL_Class_1 import DAL
+from dal_class_1 import DAL
 import processing_functions
 from datetime import datetime
 from site_information_class import SiteDataProcessor
@@ -18,7 +18,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import math
-from PlotRainfall import MapWindow
+from plot_rainfall import MapWindow
 
 
 class SiteInformationApp:

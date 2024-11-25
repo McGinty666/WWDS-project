@@ -5,13 +5,11 @@ Created on Tue Oct  8 15:53:46 2024
 @author: RMCGINT
 """
 
-
-
 import sqlalchemy
 import pyodbc
 import pandas as pd
 import re
-from DAL_Class_1 import DAL
+from dal_class_1 import DAL
 from datetime import datetime
 import matplotlib.pyplot as plt
 from datetime import timedelta
@@ -41,22 +39,6 @@ def execute_query_and_return_df_site_info(connection_name, query):
             return df
 
 
-'''
-def execute_query_and_return_df(connection_name, query):
-    with DAL(connection_name, 17) as connection:
-        if connection.connection is None:
-            print(f"Failed to establish connection to {connection_name}")
-            return None
-        else:
-            ret = connection.query(query)
-            df = pd.DataFrame(ret)
-
-            # Extract the first element from tuple column names
-            df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
-            if 'TimeGMT' in df.columns:
-                df['TimeGMT'] = pd.to_datetime(df['TimeGMT']).dt.tz_localize(None)
-            return df
-'''
 def execute_query_and_return_df(start_date, end_date, connection_name, query):
     with DAL(connection_name, 17) as connection:
         if connection.connection is None:
@@ -72,123 +54,6 @@ def execute_query_and_return_df(start_date, end_date, connection_name, query):
                 df['TimeGMT'] = pd.to_datetime(df['TimeGMT'], utc=True).dt.tz_localize(None)
             return df
 
-'''
-def plot_rainfall_and_sump_level(start_time, end_time):
-    # Convert start and end times to datetime
-    start_time = pd.to_datetime(start_time)
-    end_time = pd.to_datetime(end_time)
-
-    # Filter the dataframes based on the specified time interval
-    df_sump_filtered = df_raw_sump[(df_raw_sump["TimeGMT"] >= start_time) & (df_raw_sump["TimeGMT"] <= end_time)]
-    df_rainfall_filtered = df_rainfall[(df_rainfall["timestamp"] >= start_time) & (df_rainfall["timestamp"] <= end_time)]
-
-    # Sort the filtered dataframes by their respective time columns
-    df_sump_filtered = df_sump_filtered.sort_values(by="TimeGMT")
-    df_rainfall_filtered = df_rainfall_filtered.sort_values(by="timestamp")
-
-    # Create a figure and axis objects
-    fig, ax1 = plt.subplots(figsize=(12, 6))
-
-    # Plot sump level on the first y-axis
-    ax1.plot(df_sump_filtered["TimeGMT"], df_sump_filtered["EValue"], color='green', label='Sump Level')
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('Sump Level', color='green')
-    ax1.tick_params(axis='y', labelcolor='green')
-
-    # Create a second y-axis for rainfall
-    ax2 = ax1.twinx()
-    ax2.plot(df_rainfall_filtered["timestamp"], df_rainfall_filtered["Intensity(mm/hr)"], color='blue', label='Rainfall')
-    ax2.set_ylabel('Rainfall intensity (mm/h)', color='blue')
-    ax2.tick_params(axis='y', labelcolor='blue')
-
-    # Add title and grid
-    plt.title('Rainfall and Sump Level Over Time')
-    fig.tight_layout()
-    plt.grid(True)
-
-    # Show the plot
-    plt.show()
-
-def plot_rainfall_mean_agg_flow_meter_and_raw_sump_level(start_time, end_time, df_raw_sump, df_rainfall, df_hour_agg_flow_meter, spill_level=None, sump_ylim=None):
-    # Convert start and end times to datetime
-    start_time = pd.to_datetime(start_time)
-    end_time = pd.to_datetime(end_time)
-
-    # Filter the dataframes based on the specified time interval
-    df_sump_filtered = df_raw_sump[(df_raw_sump["TimeGMT"] >= start_time) & (df_raw_sump["TimeGMT"] <= end_time)]
-    df_rainfall_filtered = df_rainfall[(df_rainfall["time_gmt_n"] >= start_time) & (df_rainfall["time_gmt_n"] <= end_time)]
-    df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter[
-        (pd.to_datetime(df_hour_agg_flow_meter["Year"].astype(str) + '-' + df_hour_agg_flow_meter["Month"].astype(str) + '-' + df_hour_agg_flow_meter["Day"].astype(str) + ' ' + df_hour_agg_flow_meter["Hour"].astype(str) + ':00:00') >= start_time) & 
-        (pd.to_datetime(df_hour_agg_flow_meter["Year"].astype(str) + '-' + df_hour_agg_flow_meter["Month"].astype(str) + '-' + df_hour_agg_flow_meter["Day"].astype(str) + ' ' + df_hour_agg_flow_meter["Hour"].astype(str) + ':00:00') <= end_time)
-    ]
-
-    # Sort the filtered dataframes by their respective time columns
-    df_sump_filtered = df_sump_filtered.sort_values(by="TimeGMT")
-    df_rainfall_filtered = df_rainfall_filtered.sort_values(by="time_gmt_n")
-    df_hour_agg_flow_meter_filtered = df_hour_agg_flow_meter_filtered.sort_values(by=["Year", "Month", "Day", "Hour"])
-
-    # Create a figure and axis objects
-    fig, ax1 = plt.subplots(figsize=(12, 6))
-
-    # Plot sump level on the first y-axis
-    ax1.plot(df_sump_filtered["TimeGMT"], df_sump_filtered["EValue"], color='green', label='Sump Level')
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('Sump Level', color='green')
-    ax1.tick_params(axis='y', labelcolor='green')
-
-    # Apply user-defined axis range if provided
-    if sump_ylim:
-        ax1.set_ylim(sump_ylim)
-
-    # Add horizontal line for spill level if provided
-    if spill_level is not None and isinstance(spill_level, (int, float)):
-        ax1.axhline(y=spill_level, color='green', linestyle='--', label='Spill Level')
-
-    # Create a second y-axis for rainfall
-    ax2 = ax1.twinx()
-    ax2.bar(df_rainfall_filtered["time_gmt_n"], df_rainfall_filtered["Intensity(mm/hr)"], color='blue', label='Rainfall', width=0.01)
-    ax2.set_ylabel('Rainfall intensity (mm/h)', color='blue')
-    ax2.tick_params(axis='y', labelcolor='blue')
-    ax2.invert_yaxis()  # Reverse the y-axis for rainfall
-
-    # Create a third y-axis for meanEValue
-    ax3 = ax1.twinx()
-    ax3.spines['right'].set_position(('outward', 60))  # Offset the third axis to the right
-    ax3.plot(
-        pd.to_datetime(df_hour_agg_flow_meter_filtered["Year"].astype(str) + '-' + df_hour_agg_flow_meter_filtered["Month"].astype(str) + '-' + df_hour_agg_flow_meter_filtered["Day"].astype(str) + ' ' + df_hour_agg_flow_meter_filtered["Hour"].astype(str) + ':00:00'), 
-        df_hour_agg_flow_meter_filtered["meanEValue"], color='red', label='Mean EValue'
-    )
-    ax3.set_ylabel('Mean EValue flow meter', color='red')
-    ax3.tick_params(axis='y', labelcolor='red')
-
-    # Add title and remove horizontal grid lines
-    plt.title(f'Nearby Rainfall, Sump Level, and Mean EValue flow meter from {start_time} to {end_time}')
-    ax1.grid(False)  # Remove horizontal grid lines from the first y-axis
-    ax2.grid(False)  # Remove horizontal grid lines from the second y-axis
-    ax3.grid(False)  # Remove horizontal grid lines from the third y-axis
-
-    fig.tight_layout()
-
-    # Show the plot
-    plt.show()
-    
-
-
-def update_plot(pan_direction):
-    global start_time_plot, end_time_plot
-    if pan_direction == 'left':
-        start_time_plot = pd.to_datetime(start_time_plot) - pan_interval
-        end_time_plot = pd.to_datetime(end_time_plot) - pan_interval
-    elif pan_direction == 'right':
-        start_time_plot = pd.to_datetime(start_time_plot) + pan_interval
-        end_time_plot = pd.to_datetime(end_time_plot) + pan_interval
-    # Clear the previous plot
-    clear_output(wait=True)
-    # Display buttons again after clearing output
-    display(pan_left_button, pan_right_button)
-    # Plot the updated graph
-    plot_rainfall_and_sump_level(start_time_plot, end_time_plot)
-'''
 #used in the early colab version using the analogues and adding a massk to say if the threshold was exceeded
 def count_exceedance_instances(df):
     count = 0

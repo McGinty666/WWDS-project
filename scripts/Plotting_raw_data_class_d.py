@@ -432,7 +432,16 @@ class PlotWindow:
         bounds = [(0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
     
         # Optimize the RTK parameters to fit the data
-        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), method='L-BFGS-B', bounds=bounds)
+        # Define a global variable to keep track of iterations
+        iteration = 0
+
+        def callback(xk):
+            global iteration
+            iteration += 1
+            print(f'Iteration {iteration}: Current parameters: {xk}')
+
+        result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), 
+                        method='L-BFGS-B', bounds=bounds, callback=callback)
         
         # Check if optimization was successful
         if result.success:
