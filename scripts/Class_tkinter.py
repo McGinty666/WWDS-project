@@ -106,8 +106,6 @@ class SiteInformationApp:
         self.Source_sump_str = tk.StringVar()
 
 
-
-
     def get_signals(self):
         self.site_id = int(self.entry_site_id.get())
         site_id = self.site_id
