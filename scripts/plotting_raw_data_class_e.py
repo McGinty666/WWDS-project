@@ -48,6 +48,7 @@ class PlotWindow:
         self.T2 = None
         self.K2 = None
         self.df_synthetic_flow = None
+        self.df_hour_agg_flow_meter_adjusted = None
             
     
         self.plot_data(initial=True)  # Initial plot with pre-filtered data
@@ -436,16 +437,10 @@ class PlotWindow:
         bounds = [(0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
     
         # Optimize the RTK parameters to fit the data
-        # Define a global variable to keep track of iterations
-        iteration = 0
-
-        def callback(xk):
-            global iteration
-            iteration += 1
-            print(f'Iteration {iteration}: Current parameters: {xk}')
+        
 
         result = minimize(weighted_objective, initial_params, args=(self.rainfall_values, self.flow_values), 
-                        method='L-BFGS-B', bounds=bounds, callback=callback)
+                        method='L-BFGS-B', bounds=bounds)
         
         # Check if optimization was successful
         if result.success:
@@ -468,6 +463,8 @@ class PlotWindow:
             "SyntheticFlow": full_synthetic_flow
         })
     
+    
+
         # Store the training period for plotting purposes
         self.training_start_time = start_date
         self.training_end_time = end_date
@@ -478,7 +475,7 @@ class PlotWindow:
 
 
     def get_rtk_parameters_and_synthetic_flow(self):
-        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow
+        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow, self.df_hour_agg_flow_meter_adjusted
 
 '''
 if __name__ == "__main__":
