@@ -48,7 +48,9 @@ class PlotWindow:
         self.T2 = None
         self.K2 = None
         self.df_synthetic_flow = None
-        self.df_hour_agg_flow_meter_adjusted = None
+        self.flow_values = None
+        self.df_hour_agg_flow_meter_adjusted =pd.DataFrame
+
             
     
         self.plot_data(initial=True)  # Initial plot with pre-filtered data
@@ -120,14 +122,6 @@ class PlotWindow:
             self.ax2.tick_params(axis='y', labelcolor='red')
             self.ax2.set_ylim(0, self.flow_ylim)
             self.plot_adjusted_flow_meter()  # Add this line
-
-        # Plot flow meter data
-        #if df_flow is not None and not df_flow.empty:
-            #self.ax2.plot(df_flow["TimeGMT"], df_flow["meanEValue"], color='green', label='flow_trend')
-            #self.ax2.set_ylabel('Mean EValue flow meter', color='green')
-            #self.ax2.tick_params(axis='y', labelcolor='green')
-            #self.ax2.set_ylim(0, self.flow_ylim)
-            #self.plot_adjusted_flow_meter()  # Add this line
     
         # Plot sump level
         if not df_sump.empty:
@@ -462,8 +456,7 @@ class PlotWindow:
             "TimeGMT": self.df_rainfall["time_gmt_n"],
             "SyntheticFlow": full_synthetic_flow
         })
-    
-    
+
 
         # Store the training period for plotting purposes
         self.training_start_time = start_date
@@ -475,7 +468,7 @@ class PlotWindow:
 
 
     def get_rtk_parameters_and_synthetic_flow(self):
-        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow, self.df_hour_agg_flow_meter_adjusted
+        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow, self.flow_values, self.df_hour_agg_flow_meter_adjusted
 
 '''
 if __name__ == "__main__":
