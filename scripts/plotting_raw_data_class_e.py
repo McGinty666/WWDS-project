@@ -50,6 +50,8 @@ class PlotWindow:
         self.df_synthetic_flow = None
         self.flow_values = None
         self.df_hour_agg_flow_meter_adjusted =pd.DataFrame
+        self.median_profile = None
+
 
             
     
@@ -468,7 +470,7 @@ class PlotWindow:
 
 
     def get_rtk_parameters_and_synthetic_flow(self):
-        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow, self.flow_values, self.df_hour_agg_flow_meter_adjusted
+        return self.R1, self.T1, self.K1, self.R2, self.T2, self.K2, self.df_synthetic_flow, self.flow_values, self.df_hour_agg_flow_meter_adjusted, self.median_profile
 
 '''
 if __name__ == "__main__":
