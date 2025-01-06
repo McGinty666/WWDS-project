@@ -1,3 +1,6 @@
+
+import numpy as np
+
 def generate_synthetic_flow(rainfall, R, T, K):
     synthetic_flow = np.zeros(len(rainfall))
     for i in range(len(rainfall)):
