@@ -11,6 +11,14 @@ def main():
     rainfall = st.text_area("Enter rainfall intensity (mm/h) at 5-minute intervals, separated by commas or spaces:")
     rainfall = np.array([float(x) for x in rainfall.replace(',', ' ').split()]) if rainfall else np.array([])
 
+    # Ensure rainfall data length is a multiple of 12 by adding zeros if necessary
+    if len(rainfall) % 12 != 0:
+        padding_length = 12 - (len(rainfall) % 12)
+        rainfall = np.pad(rainfall, (0, padding_length), 'constant')
+
+    # Aggregate rainfall into hourly values by averaging each hour
+    hourly_rainfall = np.mean(rainfall.reshape(-1, 12), axis=1)
+
     R1 = st.number_input("Enter R value for set 1:", value=4.4)
     T1 = st.number_input("Enter T value for set 1:", value=1)
     K1 = st.number_input("Enter K value for set 1:", value=16.43)
@@ -22,8 +30,8 @@ def main():
     PFF = st.number_input("Enter the user-defined PFF (l/s):", value=0.0)
 
     if st.button("Generate Synthetic Flow"):
-        synthetic_flow1 = generate_synthetic_flow(rainfall, R1, T1, K1)
-        synthetic_flow2 = generate_synthetic_flow(rainfall, R2, T2, K2)
+        synthetic_flow1 = generate_synthetic_flow(hourly_rainfall, R1, T1, K1)
+        synthetic_flow2 = generate_synthetic_flow(hourly_rainfall, R2, T2, K2)
         overall_synthetic_flow = synthetic_flow1 + synthetic_flow2
 
         # Interpolate synthetic flow values for better granularity
@@ -47,19 +55,26 @@ def main():
         ax1.legend(loc='upper left')
 
         # Plot rainfall
-        ax2.bar(range(len(rainfall)), rainfall, label='Rainfall', color='b', alpha=0.6)
+        ax2.bar(range(len(hourly_rainfall)), hourly_rainfall, label='Rainfall', color='b', alpha=0.6)
         ax2.set_ylabel('Rainfall (mm/h)', color='b')
         ax2.tick_params(axis='y', labelcolor='b')
         ax2.set_ylim(0, 120)  # Set max y-axis value to 120
         ax2.invert_yaxis()  # Invert y-axis for rainfall
         ax2.legend(loc='upper left')
 
-        ax1.set_xlabel('Time (5-minute intervals)')
+        # Set x-axis ticks and labels for every 1 hour (12 intervals)
+        x_ticks = np.arange(0, len(overall_synthetic_flow), 12)
+        x_labels = [f'{i//12}h' for i in x_ticks]
+        ax2.set_xticks(x_ticks)
+        ax2.set_xticklabels(x_labels)
+
+        ax1.set_xlabel('Time (hours)')
 
         st.pyplot(fig)
 
         # Storage calculation in cubic meters
-        storage_required_liters = np.trapz(overall_synthetic_flow_interp[overall_synthetic_flow_interp > PFF] - PFF)
+        x_interp_seconds = x_interp * 3600  # Convert hourly intervals to seconds
+        storage_required_liters = np.trapz(overall_synthetic_flow_interp[overall_synthetic_flow_interp > PFF] - PFF, x_interp_seconds[overall_synthetic_flow_interp > PFF])
         storage_required_m3 = storage_required_liters / 1000  # Convert liters to cubic meters
         storage_required_m3 = max(storage_required_m3, 0)
 
