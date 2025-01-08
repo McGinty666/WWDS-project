@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from utils.synthetic_flow import generate_synthetic_flow
